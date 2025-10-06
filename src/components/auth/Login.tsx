@@ -98,7 +98,7 @@ const Login: React.FC = () => {
             }}
           >
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-              Project Tracker
+              Tracking Project Team
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9 }}>
               Masuk ke akun Anda untuk melanjutkan

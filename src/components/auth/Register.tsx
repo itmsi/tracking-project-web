@@ -124,7 +124,7 @@ const Register: React.FC = () => {
               Daftar Akun
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9 }}>
-              Buat akun baru untuk mulai menggunakan Project Tracker
+              Buat akun baru untuk mulai menggunakan Tracking Project Team
             </Typography>
           </Box>
 

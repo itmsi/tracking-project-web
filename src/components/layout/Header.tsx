@@ -65,7 +65,7 @@ const Header: React.FC = () => {
     >
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-          Project Tracker
+          Tracking Project Team
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

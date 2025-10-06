@@ -17,7 +17,7 @@ export const FRONTEND_CONFIG = {
 
 // Application Info
 export const APP_INFO = {
-  NAME: process.env.REACT_APP_NAME || 'Project Tracker',
+  NAME: process.env.REACT_APP_NAME || 'Tracking Project Team',
   VERSION: process.env.REACT_APP_VERSION || '1.0.0',
   DESCRIPTION: 'Modern project management application',
 } as const;
