@@ -1,46 +1,227 @@
-# Getting Started with Create React App
+# 🚀 Project Tracker Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplikasi web modern untuk mengelola proyek dan tugas menggunakan React.js dengan Material-UI dan TypeScript.
 
-## Available Scripts
+## ✨ Fitur Utama
 
-In the project directory, you can run:
+- 🔐 **Authentication** - Login dan registrasi dengan JWT
+- 📊 **Dashboard** - Statistik dan ringkasan proyek
+- 📁 **Project Management** - Kelola proyek dengan grid layout yang responsif
+- ✅ **Task Management** - Kanban board dengan drag & drop
+- 👥 **Team Management** - Kelola tim dan anggota
+- 🎨 **Modern UI/UX** - Desain yang clean dan user-friendly
+- 📱 **Responsive Design** - Optimal di semua perangkat
 
-### `npm start`
+## 🛠️ Teknologi yang Digunakan
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **React 18** - Library JavaScript untuk UI
+- **TypeScript** - Type safety dan developer experience
+- **Material-UI (MUI)** - Komponen UI yang modern
+- **Redux Toolkit** - State management
+- **React Router** - Routing dan navigasi
+- **@dnd-kit** - Drag and drop functionality
+- **Axios** - HTTP client untuk API calls
+- **React Hook Form** - Form handling
+- **Yup** - Validation schema
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## 🚀 Quick Start
 
-### `npm test`
+### Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Node.js (v16 atau lebih baru)
+- npm atau yarn
+- Backend API yang berjalan di `http://localhost:9552`
 
-### `npm run build`
+### Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Clone repository:
+```bash
+git clone <repository-url>
+cd project-tracker-frontend
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+2. Install dependencies:
+```bash
+npm install
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+3. Start development server:
+```bash
+npm start
+```
 
-### `npm run eject`
+4. Buka browser dan akses `http://localhost:9554`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## 📁 Struktur Project
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```
+src/
+├── components/          # Komponen React
+│   ├── auth/           # Komponen authentication
+│   ├── common/         # Komponen umum
+│   ├── layout/         # Layout components
+│   ├── projects/       # Komponen project
+│   └── tasks/          # Komponen task
+├── pages/              # Halaman utama
+├── services/           # API services
+├── store/              # Redux store
+├── theme.ts            # Material-UI theme
+└── App.tsx             # Root component
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+## 🔧 Konfigurasi
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+### API Configuration
 
-## Learn More
+API base URL dikonfigurasi di `src/services/api.ts`:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```typescript
+const API_BASE_URL = 'http://localhost:9552/api';
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Environment Variables
+
+Buat file `.env` di root project:
+
+```env
+REACT_APP_API_URL=http://localhost:9552/api
+REACT_APP_WS_URL=ws://localhost:9552
+```
+
+## 🎨 UI/UX Features
+
+### Modern Design System
+- **Color Palette**: Primary blue dengan accent colors
+- **Typography**: Inter font family untuk readability
+- **Spacing**: Consistent spacing system
+- **Shadows**: Subtle shadows untuk depth
+- **Animations**: Smooth transitions dan hover effects
+
+### Responsive Layout
+- **Mobile-first approach**
+- **Breakpoints**: xs, sm, md, lg, xl
+- **Flexible grid system**
+- **Adaptive components**
+
+### Interactive Elements
+- **Drag & Drop**: Kanban board dengan @dnd-kit
+- **Hover Effects**: Card lift dan color transitions
+- **Loading States**: Skeleton dan progress indicators
+- **Error Handling**: User-friendly error messages
+
+## 📱 Pages Overview
+
+### 1. Login/Register
+- Modern gradient design
+- Form validation dengan Yup
+- Responsive layout
+- Error handling
+
+### 2. Dashboard
+- Statistics cards dengan charts
+- Recent tasks dan projects
+- Quick actions
+- Real-time updates
+
+### 3. Projects
+- Grid layout dengan cards
+- Filter dan search functionality
+- Status tabs
+- Create/edit dialogs
+
+### 4. Tasks (Kanban)
+- Drag & drop kanban board
+- Task cards dengan priority indicators
+- Status columns
+- Real-time updates
+
+### 5. Teams
+- Team member management
+- Avatar groups
+- Project assignments
+- Role-based access
+
+## 🔐 Authentication Flow
+
+1. **Login/Register** - User authentication
+2. **JWT Storage** - Token disimpan di localStorage
+3. **Protected Routes** - Route protection dengan Redux
+4. **Auto Refresh** - Token refresh mechanism
+5. **Logout** - Clear tokens dan redirect
+
+## 🎯 State Management
+
+### Redux Store Structure
+```typescript
+{
+  auth: {
+    user: User | null,
+    token: string | null,
+    isAuthenticated: boolean,
+    loading: boolean,
+    error: string | null
+  },
+  projects: {
+    projects: Project[],
+    currentProject: Project | null,
+    loading: boolean,
+    error: string | null
+  },
+  tasks: {
+    tasks: Task[],
+    currentTask: Task | null,
+    loading: boolean,
+    error: string | null
+  }
+}
+```
+
+## 🚀 Deployment
+
+### Build for Production
+```bash
+npm run build
+```
+
+### Docker Deployment
+
+#### Production Build
+```bash
+# Build and run with Docker
+docker build -t project-tracker-frontend .
+docker run -p 3000:80 project-tracker-frontend
+
+# Or use docker-compose
+docker-compose up --build
+```
+
+#### Development with Docker
+```bash
+# Run development server with hot reload
+docker-compose -f docker-compose.dev.yml up
+
+# Access the app at http://localhost:9554
+```
+
+## 🤝 Contributing
+
+1. Fork repository
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- Material-UI team untuk komponen yang luar biasa
+- React team untuk framework yang powerful
+- Redux team untuk state management solution
+- @dnd-kit team untuk drag & drop functionality
+
+---
+
+**Dibuat dengan ❤️ menggunakan React.js dan Material-UI**

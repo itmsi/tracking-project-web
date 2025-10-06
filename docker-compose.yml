@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - "9554:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:9552/api
+      - REACT_APP_FRONTEND_URL=http://localhost:9554
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    networks:
+      - app-network
+
+  # Uncomment if you want to run the backend API in Docker too
+  # backend:
+  #   image: your-backend-image
+  #   ports:
+  #     - "9552:9552"
+  #   environment:
+  #     - NODE_ENV=development
+  #   networks:
+  #     - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  frontend-dev:
+    image: node:18-alpine
+    working_dir: /app
+    ports:
+      - "9554:9554"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm start
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - REACT_APP_API_URL=http://localhost:9552/api
+      - REACT_APP_FRONTEND_URL=http://localhost:9554
+      - PORT=9554
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
