@@ -5,6 +5,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { store } from './store';
 import { theme } from './theme';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 // Components
 import Layout from './components/layout/Layout';
@@ -21,8 +22,9 @@ function App() {
     <Provider store={store}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Router>
-          <Routes>
+        <NotificationProvider>
+          <Router>
+            <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -49,8 +51,9 @@ function App() {
 
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        </Router>
+            </Routes>
+          </Router>
+        </NotificationProvider>
       </ThemeProvider>
     </Provider>
   );

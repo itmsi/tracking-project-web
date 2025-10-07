@@ -53,7 +53,10 @@ const Teams: React.FC = () => {
       const response = await teamsService.getTeams();
       // Ensure teams data is valid
       const teamsData = Array.isArray(response.data.teams) 
-        ? response.data.teams.filter(team => team && team.id)
+        ? response.data.teams.filter(team => team && team.id).map(team => ({
+            ...team,
+            status: team.status || 'active'
+          }))
         : [];
       setTeams(teamsData);
       
@@ -140,9 +143,9 @@ const Teams: React.FC = () => {
     if (team) {
       setEditingTeam(team);
       setFormData({
-        name: team.name,
-        description: team.description,
-        status: team.status,
+        name: team.name || '',
+        description: team.description || '',
+        status: team.status || 'active',
       });
     } else {
       setEditingTeam(null);
@@ -230,9 +233,9 @@ const Teams: React.FC = () => {
                       {team.name}
                     </Typography>
                     <Chip
-                      label={team.status}
+                      label={team.status || 'active'}
                       size="small"
-                        color={team.status === 'active' ? 'success' : 'default'}
+                      color={(team.status || 'active') === 'active' ? 'success' : 'default'}
                       sx={{ fontWeight: 600 }}
                     />
                     </Box>

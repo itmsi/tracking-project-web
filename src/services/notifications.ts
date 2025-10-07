@@ -51,46 +51,147 @@ export interface NotificationStats {
 export const notificationsService = {
   // Get Notifications
   getNotifications: async (params: any = {}): Promise<NotificationResponse> => {
-    const response = await api.get('/notifications', { params });
-    return response.data;
+    try {
+      const response = await api.get('/notifications', { params });
+      return response.data;
+    } catch (error: any) {
+      // Jika endpoint belum tersedia (404), return data kosong
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        return {
+          success: true,
+          message: 'Notifications API belum tersedia',
+          data: {
+            notifications: [],
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: 0,
+              pages: 0
+            }
+          }
+        };
+      }
+      throw error;
+    }
   },
 
   // Get Unread Notifications
   getUnreadNotifications: async (params: any = {}): Promise<NotificationResponse> => {
-    const response = await api.get('/notifications', { 
-      params: { ...params, unread_only: true } 
-    });
-    return response.data;
+    try {
+      const response = await api.get('/notifications', { 
+        params: { ...params, unread_only: true } 
+      });
+      return response.data;
+    } catch (error: any) {
+      // Jika endpoint belum tersedia (404), return data kosong
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        return {
+          success: true,
+          message: 'Notifications API belum tersedia',
+          data: {
+            notifications: [],
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: 0,
+              pages: 0
+            }
+          }
+        };
+      }
+      throw error;
+    }
   },
 
   // Get Unread Count
   getUnreadCount: async (): Promise<{ success: boolean; data: { count: number } }> => {
-    const response = await api.get('/notifications/unread-count');
-    return response.data;
+    try {
+      const response = await api.get('/notifications/unread-count');
+      return response.data;
+    } catch (error: any) {
+      // Jika endpoint belum tersedia (404), return count 0
+      if (error.response?.status === 404) {
+        console.warn('Notifications unread count API belum tersedia di backend');
+        return {
+          success: true,
+          data: { count: 0 }
+        };
+      }
+      throw error;
+    }
   },
 
   // Mark Notification as Read
   markAsRead: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.patch(`/notifications/${id}/read`);
-    return response.data;
+    try {
+      const response = await api.patch(`/notifications/${id}/read`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        return { success: false, message: 'Notifications API belum tersedia' };
+      }
+      throw error;
+    }
   },
 
   // Mark All Notifications as Read
   markAllAsRead: async (): Promise<{ success: boolean; message: string }> => {
-    const response = await api.patch('/notifications/read-all');
-    return response.data;
+    try {
+      const response = await api.patch('/notifications/read-all');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        return { success: false, message: 'Notifications API belum tersedia' };
+      }
+      throw error;
+    }
   },
 
   // Delete Notification
   deleteNotification: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/notifications/${id}`);
-    return response.data;
+    try {
+      const response = await api.delete(`/notifications/${id}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        return { success: false, message: 'Notifications API belum tersedia' };
+      }
+      throw error;
+    }
   },
 
   // Get Notification Statistics
   getNotificationStats: async (): Promise<{ success: boolean; data: NotificationStats }> => {
-    const response = await api.get('/notifications/stats');
-    return response.data;
+    try {
+      const response = await api.get('/notifications/stats');
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Notifications stats API belum tersedia di backend');
+        return {
+          success: true,
+          data: {
+            total: 0,
+            unread: 0,
+            by_type: {
+              task_assigned: 0,
+              task_completed: 0,
+              task_due: 0,
+              project_updated: 0,
+              team_invite: 0,
+              comment_added: 0,
+              system: 0
+            }
+          }
+        };
+      }
+      throw error;
+    }
   },
 
   // Create Notification (untuk testing atau admin)
@@ -103,7 +204,15 @@ export const notificationsService = {
     related_type?: string;
     metadata?: any;
   }): Promise<{ success: boolean; data: Notification }> => {
-    const response = await api.post('/notifications', notificationData);
-    return response.data;
+    try {
+      const response = await api.post('/notifications', notificationData);
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        console.warn('Notifications API belum tersedia di backend');
+        throw new Error('Notifications API belum tersedia di backend');
+      }
+      throw error;
+    }
   }
 };

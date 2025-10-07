@@ -63,7 +63,10 @@ const Header: React.FC = () => {
       setUnreadCount(unreadResponse.data.count);
     } catch (err: any) {
       console.error('Error loading notifications:', err);
-      setError('Gagal memuat notifikasi');
+      // Jika error 404, tidak perlu set error karena sudah dihandle di service
+      if (err.response?.status !== 404) {
+        setError('Gagal memuat notifikasi');
+      }
     } finally {
       setLoading(false);
     }
@@ -74,8 +77,12 @@ const Header: React.FC = () => {
     try {
       const response = await notificationsService.getUnreadCount();
       setUnreadCount(response.data.count);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading unread count:', err);
+      // Jika error 404, set count ke 0 (sudah dihandle di service)
+      if (err.response?.status === 404) {
+        setUnreadCount(0);
+      }
     }
   };
 
@@ -381,15 +388,16 @@ const Header: React.FC = () => {
                           />
                         </Box>
                       }
+                      secondaryTypographyProps={{ component: 'div' }}
                       secondary={
-                        <Box>
+                        <>
                           <Typography variant="body2" color="text.secondary">
                             {notification.message}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {new Date(notification.created_at).toLocaleString()}
                           </Typography>
-                        </Box>
+                        </>
                       }
                     />
                     <ListItemSecondaryAction>

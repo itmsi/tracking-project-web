@@ -43,6 +43,15 @@ export const authService = {
   // Login
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post('/auth/login', credentials);
+    
+    // Simpan token ke localStorage
+    if (response.data.data?.access_token) {
+      localStorage.setItem('access_token', response.data.data.access_token);
+      if (response.data.data.refresh_token) {
+        localStorage.setItem('refresh_token', response.data.data.refresh_token);
+      }
+    }
+    
     return response.data;
   },
 
@@ -70,8 +79,13 @@ export const authService = {
 
   // Logout
   logout: async (): Promise<{ success: boolean; message: string }> => {
-    const response = await api.post('/auth/logout');
-    return response.data;
+    try {
+      await api.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+    }
+    return { success: true, message: 'Logged out successfully' };
   },
 
   // Refresh Token

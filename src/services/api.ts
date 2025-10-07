@@ -24,22 +24,46 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor untuk handle error
+// Response interceptor untuk handle error dan refresh token
 api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired, redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // Jika token expired (401) dan belum retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+          const response = await axios.post(
+            `${process.env.REACT_APP_API_URL}/auth/refresh-token`,
+            { refresh_token: refreshToken }
+          );
+
+          const { access_token } = response.data.data;
+          localStorage.setItem('access_token', access_token);
+
+          // Retry original request dengan token baru
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        // Jika refresh token gagal, logout user
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     } else if (error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
       // Backend tidak tersedia
       console.error('Backend API tidak tersedia. Pastikan backend berjalan di port 9552');
       // Bisa menampilkan notifikasi ke user
     }
+    
     return Promise.reject(error);
   }
 );
