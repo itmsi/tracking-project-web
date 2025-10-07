@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -8,58 +8,171 @@ import {
   Avatar,
   AvatarGroup,
   Chip,
-  Grid,
   Fab,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Add,
   Group,
-  Person,
-  Email,
-  Phone,
+  Edit,
+  Delete,
+  Visibility,
 } from '@mui/icons-material';
+import { teamsService, Team, TeamMember } from '../services/teams';
+import { usersService, User } from '../services/users';
 
 const Teams: React.FC = () => {
-  const mockTeams = [
-    {
-      id: 1,
-      name: 'Frontend Team',
-      description: 'Team untuk pengembangan frontend aplikasi',
-      members: [
-        { name: 'John Doe', role: 'Lead', avatar: 'JD' },
-        { name: 'Jane Smith', role: 'Developer', avatar: 'JS' },
-        { name: 'Mike Johnson', role: 'Developer', avatar: 'MJ' },
-      ],
-      projects: 5,
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Backend Team',
-      description: 'Team untuk pengembangan backend dan API',
-      members: [
-        { name: 'Alice Brown', role: 'Lead', avatar: 'AB' },
-        { name: 'Bob Wilson', role: 'Developer', avatar: 'BW' },
-        { name: 'Carol Davis', role: 'Developer', avatar: 'CD' },
-      ],
-      projects: 3,
-      status: 'active',
-    },
-    {
-      id: 3,
-      name: 'Design Team',
-      description: 'Team untuk UI/UX design dan branding',
-      members: [
-        { name: 'Emma Taylor', role: 'Lead', avatar: 'ET' },
-        { name: 'Frank Miller', role: 'Designer', avatar: 'FM' },
-      ],
-      projects: 2,
-      status: 'active',
-    },
-  ];
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamMembers, setTeamMembers] = useState<Record<string, TeamMember[]>>({});
+  const [, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    status: 'active' as 'active' | 'inactive',
+  });
+
+  // Load teams data
+  const loadTeams = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await teamsService.getTeams();
+      // Ensure teams data is valid
+      const teamsData = Array.isArray(response.data.teams) 
+        ? response.data.teams.filter(team => team && team.id)
+        : [];
+      setTeams(teamsData);
+      
+      // Load members for each team
+      const membersData: Record<string, TeamMember[]> = {};
+      for (const team of teamsData) {
+        try {
+          const membersResponse = await teamsService.getTeamMembers(team.id);
+          // Ensure data is an array and validate structure
+          const members = Array.isArray(membersResponse.data) 
+            ? membersResponse.data.filter(member => 
+                member && 
+                member.user && 
+                typeof member.user === 'object'
+              )
+            : [];
+          membersData[team.id] = members;
+        } catch (err) {
+          console.warn(`Failed to load members for team ${team.id}:`, err);
+          membersData[team.id] = [];
+        }
+      }
+      setTeamMembers(membersData);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Gagal memuat data teams');
+      console.error('Error loading teams:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load users for adding members
+  const loadUsers = async () => {
+    try {
+      const response = await usersService.getUsers({ limit: 100 });
+      setUsers(response.data.users);
+    } catch (err) {
+      console.error('Error loading users:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadTeams();
+    loadUsers();
+  }, []);
+
+  const handleCreateTeam = async () => {
+    try {
+      await teamsService.createTeam(formData);
+      setOpenDialog(false);
+      setFormData({ name: '', description: '', status: 'active' });
+      loadTeams();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Gagal membuat team');
+    }
+  };
+
+  const handleUpdateTeam = async () => {
+    if (!editingTeam) return;
+    
+    try {
+      await teamsService.updateTeam(editingTeam.id, formData);
+      setOpenDialog(false);
+      setEditingTeam(null);
+      setFormData({ name: '', description: '', status: 'active' });
+      loadTeams();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Gagal mengupdate team');
+    }
+  };
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (!window.confirm('Apakah Anda yakin ingin menghapus team ini?')) return;
+    
+    try {
+      await teamsService.deleteTeam(teamId);
+      loadTeams();
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Gagal menghapus team');
+    }
+  };
+
+  const handleOpenDialog = (team?: Team) => {
+    if (team) {
+      setEditingTeam(team);
+      setFormData({
+        name: team.name,
+        description: team.description,
+        status: team.status,
+      });
+    } else {
+      setEditingTeam(null);
+      setFormData({ name: '', description: '', status: 'active' });
+    }
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setEditingTeam(null);
+    setFormData({ name: '', description: '', status: 'active' });
+  };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
@@ -72,6 +185,7 @@ const Teams: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<Add />}
+          onClick={() => handleOpenDialog()}
           sx={{
             background: 'linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%)',
             '&:hover': {
@@ -84,7 +198,9 @@ const Teams: React.FC = () => {
       </Box>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 3 }}>
-        {mockTeams.map((team) => (
+        {teams.map((team) => {
+          const members = teamMembers[team.id] || [];
+          return (
           <Box key={team.id}>
             <Card
               sx={{
@@ -109,57 +225,152 @@ const Teams: React.FC = () => {
                   >
                     <Group />
                   </Avatar>
-                  <Box>
+                    <Box sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" component="h2" fontWeight="bold">
                       {team.name}
                     </Typography>
                     <Chip
                       label={team.status}
                       size="small"
-                      color="success"
+                        color={team.status === 'active' ? 'success' : 'default'}
                       sx={{ fontWeight: 600 }}
                     />
-                  </Box>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      <Button
+                        size="small"
+                        startIcon={<Edit />}
+                        onClick={() => handleOpenDialog(team)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<Delete />}
+                        onClick={() => handleDeleteTeam(team.id)}
+                      >
+                        Delete
+                      </Button>
+                    </Box>
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" paragraph>
-                  {team.description}
+                  {team.description || 'No description available'}
                 </Typography>
 
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                    Team Members ({team.members.length})
+                      Team Members ({members.length})
                   </Typography>
                   <AvatarGroup max={4}>
-                    {team.members.map((member, index) => (
-                      <Avatar
-                        key={index}
-                        sx={{ width: 32, height: 32 }}
-                        title={`${member.name} - ${member.role}`}
-                      >
-                        {member.avatar}
-                      </Avatar>
-                    ))}
+                      {members.map((member, index) => {
+                        const firstName = member?.user?.first_name || 'Unknown';
+                        const lastName = member?.user?.last_name || 'User';
+                        const fullName = `${firstName} ${lastName}`;
+                        const initials = `${firstName[0] || 'U'}${lastName[0] || 'U'}`;
+                        
+                        return (
+                          <Avatar
+                            key={index}
+                            sx={{ width: 32, height: 32 }}
+                            title={`${fullName} - ${member?.role || 'member'}`}
+                            src={member?.user?.avatar_url}
+                          >
+                            {initials}
+                          </Avatar>
+                        );
+                      })}
                   </AvatarGroup>
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="body2" color="text.secondary">
-                    {team.projects} Active Projects
+                      Created: {team.created_at ? new Date(team.created_at).toLocaleDateString() : 'Unknown'}
                   </Typography>
-                  <Button size="small" variant="outlined">
+                    <Button size="small" variant="outlined" startIcon={<Visibility />}>
                     View Details
                   </Button>
                 </Box>
               </CardContent>
             </Card>
           </Box>
-        ))}
+          );
+        })}
       </Box>
+
+      {teams.length === 0 && !loading && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No teams found
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Create your first team to get started
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpenDialog()}
+          >
+            Create Team
+          </Button>
+        </Box>
+      )}
+
+      {/* Create/Edit Team Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingTeam ? 'Edit Team' : 'Create New Team'}
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Team Name"
+            fullWidth
+            variant="outlined"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            margin="dense"
+            label="Description"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            sx={{ mb: 2 }}
+          />
+          <FormControl fullWidth>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={formData.status}
+              label="Status"
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
+            >
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button 
+            onClick={editingTeam ? handleUpdateTeam : handleCreateTeam}
+            variant="contained"
+          >
+            {editingTeam ? 'Update' : 'Create'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Fab
         color="primary"
         aria-label="add team"
+        onClick={() => handleOpenDialog()}
         sx={{
           position: 'fixed',
           bottom: 16,
