@@ -336,7 +336,14 @@ const Projects: React.FC = () => {
       </TabPanel>
 
       {/* Create/Edit Project Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        disableEnforceFocus
+        disableAutoFocus
+      >
         <DialogTitle>
           {editingProject ? 'Edit Project' : 'Create New Project'}
         </DialogTitle>

@@ -278,7 +278,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
       </DndContext>
 
       {/* Create Task Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        disableEnforceFocus
+        disableAutoFocus
+      >
         <DialogTitle>Create New Task</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>

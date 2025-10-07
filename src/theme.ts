@@ -166,6 +166,21 @@ export const theme = createTheme({
         },
       },
     },
+    MuiDialog: {
+      defaultProps: {
+        disableEnforceFocus: true,
+        disableAutoFocus: true,
+        disableRestoreFocus: true,
+        keepMounted: false,
+      },
+    },
+    MuiModal: {
+      defaultProps: {
+        disableEnforceFocus: true,
+        disableAutoFocus: true,
+        disableRestoreFocus: true,
+      },
+    },
   },
   breakpoints: {
     values: {
