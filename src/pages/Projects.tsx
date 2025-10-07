@@ -201,6 +201,11 @@ const Projects: React.FC = () => {
               value={statusFilter}
               label="Status"
               onChange={(e) => setStatusFilter(e.target.value)}
+              MenuProps={{
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+              }}
             >
               <MenuItem value="all">All Status</MenuItem>
               <MenuItem value="active">Active</MenuItem>
@@ -216,6 +221,11 @@ const Projects: React.FC = () => {
               value={sortBy}
               label="Sort By"
               onChange={(e) => setSortBy(e.target.value)}
+              MenuProps={{
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+              }}
             >
               <MenuItem value="created_at">Created Date</MenuItem>
               <MenuItem value="name">Name</MenuItem>
@@ -370,6 +380,11 @@ const Projects: React.FC = () => {
                   value={formData.status}
                   label="Status"
                   onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  MenuProps={{
+                    disableEnforceFocus: true,
+                    disableAutoFocus: true,
+                    disableRestoreFocus: true,
+                  }}
                 >
                   <MenuItem value="active">Active</MenuItem>
                   <MenuItem value="on_hold">On Hold</MenuItem>

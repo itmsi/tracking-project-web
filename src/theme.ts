@@ -181,6 +181,22 @@ export const theme = createTheme({
         disableRestoreFocus: true,
       },
     },
+    MuiSelect: {
+      defaultProps: {
+        MenuProps: {
+          disableEnforceFocus: true,
+          disableAutoFocus: true,
+          disableRestoreFocus: true,
+        },
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        disableEnforceFocus: true,
+        disableAutoFocus: true,
+        disableRestoreFocus: true,
+      },
+    },
   },
   breakpoints: {
     values: {

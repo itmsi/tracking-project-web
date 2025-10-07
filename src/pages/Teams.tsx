@@ -411,6 +411,11 @@ const Teams: React.FC = () => {
               value={formData.status}
               label="Status"
               onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'inactive' })}
+              MenuProps={{
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+              }}
             >
               <MenuItem value="active">Active</MenuItem>
               <MenuItem value="inactive">Inactive</MenuItem>

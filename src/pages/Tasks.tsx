@@ -12,6 +12,8 @@ import {
   Tabs,
   Tab,
   Paper,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search,
@@ -49,19 +51,67 @@ function TabPanel(props: TabPanelProps) {
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { tasks, loading } = useSelector((state: RootState) => state.tasks);
+  const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
   const { id: projectId } = useParams<{ id: string }>();
   
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [tabValue, setTabValue] = useState(0);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [statusSelectOpen, setStatusSelectOpen] = useState(false);
+  const [prioritySelectOpen, setPrioritySelectOpen] = useState(false);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Handle focus management for Select components
+  useEffect(() => {
+    const rootElement = document.getElementById('root');
+    
+    if (statusSelectOpen || prioritySelectOpen) {
+      // Remove focus from any focused elements when selects are opened
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && activeElement !== document.body) {
+        activeElement.blur();
+      }
+    } else {
+      // Remove focus from any focused menu items when selects are closed
+      const activeElement = document.activeElement as HTMLElement;
+      if (activeElement && activeElement.closest('.MuiMenu-root')) {
+        activeElement.blur();
+      }
+      
+      // Use inert attribute to prevent focus issues
+      if (rootElement) {
+        rootElement.removeAttribute('inert');
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (rootElement) {
+        rootElement.removeAttribute('inert');
+      }
+    };
+  }, [statusSelectOpen, prioritySelectOpen]);
 
   useEffect(() => {
-    const params = projectId ? { project_id: projectId } : {};
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+    if (statusFilter !== 'all') params.status = statusFilter;
+    if (priorityFilter !== 'all') params.priority = priorityFilter;
+    
     dispatch(fetchTasks(params));
-  }, [dispatch, projectId]);
+  }, [dispatch, projectId, debouncedSearchTerm, statusFilter, priorityFilter]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -88,8 +138,22 @@ const Tasks: React.FC = () => {
 
   const statusCounts = getStatusCounts();
 
+  if (loading && tasks.length === 0) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => dispatch({ type: 'tasks/clearError' })}>
+          {error}
+        </Alert>
+      )}
+
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
@@ -119,7 +183,18 @@ const Tasks: React.FC = () => {
 
       {/* Filters */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
+          {loading && (
+            <CircularProgress 
+              size={20} 
+              sx={{ 
+                position: 'absolute', 
+                top: 16, 
+                right: 16,
+                color: 'primary.main'
+              }} 
+            />
+          )}
           <TextField
             placeholder="Search tasks..."
             value={searchTerm}
@@ -139,13 +214,77 @@ const Tasks: React.FC = () => {
             <Select
               value={statusFilter}
               label="Status"
+              open={statusSelectOpen}
+              onOpen={() => setStatusSelectOpen(true)}
+              onClose={() => setStatusSelectOpen(false)}
               onChange={(e) => setStatusFilter(e.target.value)}
+              MenuProps={{
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+                disablePortal: false,
+                onClose: () => {
+                  setStatusSelectOpen(false);
+                  // Force blur any focused menu items
+                  setTimeout(() => {
+                    const activeElement = document.activeElement as HTMLElement;
+                    if (activeElement && activeElement.classList.contains('MuiMenuItem-root')) {
+                      activeElement.blur();
+                    }
+                  }, 100);
+                },
+              }}
             >
-              <MenuItem value="all">All Status</MenuItem>
-              <MenuItem value="todo">To Do</MenuItem>
-              <MenuItem value="in_progress">In Progress</MenuItem>
-              <MenuItem value="done">Done</MenuItem>
-              <MenuItem value="blocked">Blocked</MenuItem>
+              <MenuItem 
+                value="all"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setStatusFilter('all');
+                  setTimeout(() => setStatusSelectOpen(false), 50);
+                }}
+              >
+                All Status
+              </MenuItem>
+              <MenuItem 
+                value="todo"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setStatusFilter('todo');
+                  setTimeout(() => setStatusSelectOpen(false), 50);
+                }}
+              >
+                To Do
+              </MenuItem>
+              <MenuItem 
+                value="in_progress"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setStatusFilter('in_progress');
+                  setTimeout(() => setStatusSelectOpen(false), 50);
+                }}
+              >
+                In Progress
+              </MenuItem>
+              <MenuItem 
+                value="done"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setStatusFilter('done');
+                  setTimeout(() => setStatusSelectOpen(false), 50);
+                }}
+              >
+                Done
+              </MenuItem>
+              <MenuItem 
+                value="blocked"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setStatusFilter('blocked');
+                  setTimeout(() => setStatusSelectOpen(false), 50);
+                }}
+              >
+                Blocked
+              </MenuItem>
             </Select>
           </FormControl>
 
@@ -154,13 +293,77 @@ const Tasks: React.FC = () => {
             <Select
               value={priorityFilter}
               label="Priority"
+              open={prioritySelectOpen}
+              onOpen={() => setPrioritySelectOpen(true)}
+              onClose={() => setPrioritySelectOpen(false)}
               onChange={(e) => setPriorityFilter(e.target.value)}
+              MenuProps={{
+                disableEnforceFocus: true,
+                disableAutoFocus: true,
+                disableRestoreFocus: true,
+                disablePortal: false,
+                onClose: () => {
+                  setPrioritySelectOpen(false);
+                  // Force blur any focused menu items
+                  setTimeout(() => {
+                    const activeElement = document.activeElement as HTMLElement;
+                    if (activeElement && activeElement.classList.contains('MuiMenuItem-root')) {
+                      activeElement.blur();
+                    }
+                  }, 100);
+                },
+              }}
             >
-              <MenuItem value="all">All Priority</MenuItem>
-              <MenuItem value="low">Low</MenuItem>
-              <MenuItem value="medium">Medium</MenuItem>
-              <MenuItem value="high">High</MenuItem>
-              <MenuItem value="urgent">Urgent</MenuItem>
+              <MenuItem 
+                value="all"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setPriorityFilter('all');
+                  setTimeout(() => setPrioritySelectOpen(false), 50);
+                }}
+              >
+                All Priority
+              </MenuItem>
+              <MenuItem 
+                value="low"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setPriorityFilter('low');
+                  setTimeout(() => setPrioritySelectOpen(false), 50);
+                }}
+              >
+                Low
+              </MenuItem>
+              <MenuItem 
+                value="medium"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setPriorityFilter('medium');
+                  setTimeout(() => setPrioritySelectOpen(false), 50);
+                }}
+              >
+                Medium
+              </MenuItem>
+              <MenuItem 
+                value="high"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setPriorityFilter('high');
+                  setTimeout(() => setPrioritySelectOpen(false), 50);
+                }}
+              >
+                High
+              </MenuItem>
+              <MenuItem 
+                value="urgent"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setPriorityFilter('urgent');
+                  setTimeout(() => setPrioritySelectOpen(false), 50);
+                }}
+              >
+                Urgent
+              </MenuItem>
             </Select>
           </FormControl>
         </Box>
@@ -259,7 +462,12 @@ const Tasks: React.FC = () => {
 
       {/* Content */}
       {viewMode === 'kanban' ? (
-        <KanbanBoard projectId={projectId} />
+        <KanbanBoard 
+          projectId={projectId} 
+          searchTerm={debouncedSearchTerm}
+          statusFilter={statusFilter}
+          priorityFilter={priorityFilter}
+        />
       ) : (
         <Box>
           <TabPanel value={tabValue} index={0}>

@@ -52,9 +52,17 @@ import DroppableColumn from './DroppableColumn';
 
 interface KanbanBoardProps {
   projectId?: string;
+  searchTerm?: string;
+  statusFilter?: string;
+  priorityFilter?: string;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ 
+  projectId, 
+  searchTerm, 
+  statusFilter, 
+  priorityFilter 
+}) => {
   const dispatch = useDispatch<AppDispatch>();
   const { tasks, loading } = useSelector((state: RootState) => state.tasks);
   
@@ -85,9 +93,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
   ];
 
   useEffect(() => {
-    const params = projectId ? { project_id: projectId } : {};
+    const params: any = {};
+    if (projectId) params.project_id = projectId;
+    if (searchTerm) params.search = searchTerm;
+    if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+    if (priorityFilter && priorityFilter !== 'all') params.priority = priorityFilter;
+    
     dispatch(fetchTasks(params));
-  }, [dispatch, projectId]);
+  }, [dispatch, projectId, searchTerm, statusFilter, priorityFilter]);
 
   const tasksByStatus = {
     todo: tasks.filter(task => task.status === 'todo'),
@@ -310,6 +323,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ projectId }) => {
                   value={formData.priority}
                   label="Priority"
                   onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                  MenuProps={{
+                    disableEnforceFocus: true,
+                    disableAutoFocus: true,
+                    disableRestoreFocus: true,
+                  }}
                 >
                   <MenuItem value="low">Low</MenuItem>
                   <MenuItem value="medium">Medium</MenuItem>
