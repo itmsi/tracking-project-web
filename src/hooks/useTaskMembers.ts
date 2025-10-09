@@ -37,9 +37,24 @@ export const useTaskMembers = (taskId: string | null) => {
       setLoading(true);
       setError(null);
       const response = await taskViewService.getTaskMembers(taskId);
-      setMembers(response.data.members);
+      console.log('📋 loadMembers API response:', response);
+      
+      // Handle API response structure
+      const responseData = response.data;
+      let membersList: TaskMember[] = [];
+      
+      if (Array.isArray(responseData)) {
+        membersList = responseData;
+      } else if (responseData && typeof responseData === 'object') {
+        // API might wrap data: { data: { members: [...] } } or { members: [...] }
+        membersList = responseData.data?.members || responseData.members || [];
+      }
+      
+      setMembers(Array.isArray(membersList) ? membersList : []);
     } catch (err: any) {
+      console.error('❌ loadMembers error:', err);
       setError(err.response?.data?.message || 'Failed to load members');
+      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -95,14 +110,32 @@ export const useTaskMembers = (taskId: string | null) => {
 
     try {
       const response = await taskViewService.searchUsersForTask(taskId, query);
-      return response.data;
+      console.log('🔍 searchUsers API response:', response);
+      
+      // Handle different response structures
+      // API might return: { data: { users: [...] } } or { data: [...] }
+      const responseData = response.data;
+      
+      if (Array.isArray(responseData)) {
+        return responseData;
+      } else if (responseData && typeof responseData === 'object') {
+        // Check common properties
+        const users = responseData.data || responseData.users || [];
+        return Array.isArray(users) ? users : [];
+      }
+      
+      return [];
     } catch (err: any) {
+      console.error('❌ searchUsers error:', err);
       throw new Error(err.response?.data?.message || 'Failed to search users');
     }
   };
 
   useEffect(() => {
-    loadMembers();
+    if (taskId) {
+      loadMembers();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
 
   return {

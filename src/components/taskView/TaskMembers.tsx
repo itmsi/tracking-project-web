@@ -122,9 +122,14 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
 
     try {
       const users = await searchUsers(query);
-      setSearchResults(users);
+      console.log('🔍 Search users result:', users);
+      
+      // Hook sudah handle response structure, jadi users seharusnya sudah array
+      setSearchResults(Array.isArray(users) ? users : []);
     } catch (error: any) {
-      showNotification(error.message, 'error');
+      console.error('❌ Search users error:', error);
+      setSearchResults([]);
+      showNotification(error.message || 'Failed to search users', 'error');
     }
   };
 
@@ -235,7 +240,7 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
         <AddMemberForm>
           <Box component="form" onSubmit={handleAddMember} display="flex" flexDirection="column" gap={2}>
             <Autocomplete
-              options={searchResults}
+              options={Array.isArray(searchResults) ? searchResults : []}
               getOptionLabel={(option) => `${option.first_name} ${option.last_name} (${option.email})`}
               value={selectedUser}
               onChange={(_, newValue) => setSelectedUser(newValue)}
@@ -244,6 +249,8 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                 setSearchQuery(newInputValue);
                 handleSearchUsers(newInputValue);
               }}
+              loading={loading}
+              noOptionsText={searchQuery.length < 2 ? "Type at least 2 characters" : "No users found"}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -256,7 +263,7 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                 <Box component="li" {...props}>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Avatar src={option.avatar_url} sx={{ width: 24, height: 24 }}>
-                      {option.first_name[0]}
+                      {option.first_name?.[0] || '?'}
                     </Avatar>
                     <Box>
                       <Typography variant="body2">
