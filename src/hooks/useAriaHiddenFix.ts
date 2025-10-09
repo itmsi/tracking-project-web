@@ -40,6 +40,7 @@ export const useAriaHiddenFix = (isOpen: boolean) => {
 
 /**
  * Global hook untuk memantau dan memperbaiki masalah aria-hidden di seluruh aplikasi
+ * Updated: Hanya apply fix untuk dialog/modal MUI, tidak untuk Select/Menu
  */
 export const useGlobalAriaHiddenFix = () => {
   useEffect(() => {
@@ -47,8 +48,19 @@ export const useGlobalAriaHiddenFix = () => {
       mutations.forEach((mutation) => {
         if (mutation.type === 'attributes' && mutation.attributeName === 'aria-hidden') {
           const target = mutation.target as HTMLElement;
+          
+          // Only apply fix for root element when aria-hidden is set
           if (target.id === 'root' && target.getAttribute('aria-hidden') === 'true') {
-            // Replace aria-hidden with inert
+            // Check if there's a MUI Menu or Select open (they use Popover)
+            const hasOpenMenu = document.querySelector('.MuiPopover-root[aria-hidden="false"]');
+            const hasOpenSelect = document.querySelector('.MuiMenu-root');
+            
+            // Don't interfere with MUI Select/Menu - let them handle aria-hidden
+            if (hasOpenMenu || hasOpenSelect) {
+              return;
+            }
+            
+            // Only replace aria-hidden with inert for non-menu cases (e.g., Dialogs)
             target.removeAttribute('aria-hidden');
             target.setAttribute('inert', 'true');
           }
@@ -66,6 +78,11 @@ export const useGlobalAriaHiddenFix = () => {
 
     return () => {
       observer.disconnect();
+      
+      // Cleanup: remove any inert attributes
+      if (rootElement) {
+        rootElement.removeAttribute('inert');
+      }
     };
   }, []);
 };

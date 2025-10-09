@@ -6,9 +6,10 @@ import { format } from 'date-fns';
 interface TaskChatWebSocketProps {
   taskId: string;
   permissions?: any;
+  initialMessages?: any[];
 }
 
-const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissions }) => {
+const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissions, initialMessages = [] }) => {
   const {
     messages,
     isConnected,
@@ -21,7 +22,7 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
     deleteMessage,
     startTyping,
     stopTyping
-  } = useWebSocketChat(taskId);
+  } = useWebSocketChat(taskId, initialMessages);
 
   const [newMessage, setNewMessage] = useState('');
   const [editingMessage, setEditingMessage] = useState<string | null>(null);

@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { WEBSOCKET_EVENTS } from '../utils/websocketEvents';
 import { toast } from 'react-toastify';
+import { taskViewService } from '../services/taskViewService';
 
-export const useWebSocketChat = (taskId: string) => {
+export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) => {
   const { socket, isConnected } = useWebSocket();
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>(initialMessages);
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState<any[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
@@ -13,6 +14,38 @@ export const useWebSocketChat = (taskId: string) => {
   const [error, setError] = useState<string | null>(null);
   
   // typingTimeoutRef is used in TaskChatWebSocket component
+
+  // Update messages when initialMessages prop changes
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
+      console.log('💬 Setting initial messages from prop:', initialMessages);
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
+
+  // Load initial chat history (fallback jika initialMessages kosong)
+  const loadChatHistory = useCallback(async () => {
+    if (!taskId) return;
+
+    try {
+      setIsLoading(true);
+      const response = await taskViewService.getTaskChat(taskId, { limit: 100 });
+      console.log('📜 Chat history loaded:', response);
+      
+      // Handle API response structure
+      const chatData = response.data?.data || response.data;
+      const messagesList = chatData?.messages || chatData?.chat?.messages || [];
+      
+      console.log('💬 Setting messages from API:', messagesList);
+      setMessages(Array.isArray(messagesList) ? messagesList : []);
+    } catch (err: any) {
+      console.error('❌ Failed to load chat history:', err);
+      setError(err.response?.data?.message || 'Failed to load chat history');
+      setMessages([]); // Set empty array on error
+    } finally {
+      setIsLoading(false);
+    }
+  }, [taskId]);
 
   // Join task room
   const joinTask = useCallback(() => {
@@ -180,6 +213,17 @@ export const useWebSocketChat = (taskId: string) => {
     };
   }, [socket]);
 
+  // Load chat history on mount (only if initialMessages is empty)
+  useEffect(() => {
+    if (initialMessages.length === 0) {
+      console.log('📜 Loading chat history from API (no initial messages)');
+      loadChatHistory();
+    } else {
+      console.log('✅ Using initial messages from TaskView, skipping API call');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
+
   // Auto join/leave task
   useEffect(() => {
     if (isConnected && taskId) {
@@ -213,6 +257,7 @@ export const useWebSocketChat = (taskId: string) => {
     startTyping,
     stopTyping,
     joinTask,
-    leaveTask
+    leaveTask,
+    loadChatHistory
   };
 };

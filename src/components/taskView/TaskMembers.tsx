@@ -259,23 +259,26 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                   size="small"
                 />
               )}
-              renderOption={(props, option) => (
-                <Box component="li" {...props}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar src={option.avatar_url} sx={{ width: 24, height: 24 }}>
-                      {option.first_name?.[0] || '?'}
-                    </Avatar>
-                    <Box>
-                      <Typography variant="body2">
-                        {option.first_name} {option.last_name}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {option.email}
-                      </Typography>
+              renderOption={(props, option) => {
+                const { key, ...otherProps } = props;
+                return (
+                  <Box component="li" key={key} {...otherProps}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Avatar src={option.avatar_url} sx={{ width: 24, height: 24 }}>
+                        {option.first_name?.[0] || '?'}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="body2">
+                          {option.first_name} {option.last_name}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          {option.email}
+                        </Typography>
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
-              )}
+                );
+              }}
             />
 
             {selectedUser && (
@@ -382,7 +385,7 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
               <ListItemText
                 primary={
                   <Box display="flex" alignItems="center" gap={1}>
-                    <Typography variant="subtitle2">
+                    <Typography variant="subtitle2" component="span">
                       {member.first_name} {member.last_name}
                     </Typography>
                     <Chip 
@@ -394,15 +397,17 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                   </Box>
                 }
                 secondary={
-                  <Box>
-                    <Typography variant="body2" color="textSecondary">
+                  <Box component="span" display="block">
+                    <Typography variant="body2" color="textSecondary" component="span" display="block">
                       {member.email}
                     </Typography>
-                    <Typography variant="caption" color="textSecondary">
+                    <Typography variant="caption" color="textSecondary" component="span" display="block">
                       Joined {new Date(member.joined_at).toLocaleDateString()}
                     </Typography>
                   </Box>
                 }
+                primaryTypographyProps={{ component: 'div' }}
+                secondaryTypographyProps={{ component: 'div' }}
               />
               {canManageMembers && member.role !== 'owner' && (
                 <ListItemSecondaryAction>

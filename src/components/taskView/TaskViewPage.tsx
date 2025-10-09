@@ -117,12 +117,13 @@ const TaskViewPage: React.FC = () => {
     );
   }
 
-  const { task, details, members, attachments, user_permissions } = taskView;
+  const { task, details, members, attachments, user_permissions, chat } = taskView;
   console.log('✅ TaskViewPage: Rendering with data:', { 
     task: task?.title, 
     hasDetails: !!details, 
     memberCount: members?.length,
     attachmentCount: attachments?.length,
+    chatMessageCount: chat?.messages?.length || 0,
     permissions: user_permissions 
   });
 
@@ -164,6 +165,7 @@ const TaskViewPage: React.FC = () => {
           <TaskChatWebSocket 
             taskId={taskId!} 
             permissions={user_permissions || null}
+            initialMessages={chat?.messages || []}
           />
         </TaskMain>
 
