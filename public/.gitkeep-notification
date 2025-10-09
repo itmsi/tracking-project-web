@@ -1,0 +1,21 @@
+# Notification Sound
+
+Untuk menambahkan notification sound:
+1. Download file audio (MP3 format)
+2. Rename menjadi `notification-sound.mp3`
+3. Simpan di folder `/public/`
+
+File audio akan di-play saat ada notifikasi baru dengan volume 30%.
+
+Jika file tidak ada, aplikasi akan gracefully skip tanpa error.
+
+Saran file audio:
+- https://notificationsounds.com/
+- https://soundbible.com/
+- Atau buat custom sound sendiri
+
+Format yang didukung:
+- MP3 (recommended)
+- WAV
+- OGG
+

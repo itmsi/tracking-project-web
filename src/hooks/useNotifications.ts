@@ -1,19 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import { notificationsService, Notification } from '../services/notifications';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { notificationsService, AppNotification } from '../services/notifications';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
 export const useNotifications = (params: any = {}) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiAvailable, setApiAvailable] = useState<boolean | null>(null);
+  const { socket, isConnected } = useWebSocket();
+  const hasSetupWebSocket = useRef(false);
+  const paramsRef = useRef(params);
+  
+  // Update params ref when params change
+  useEffect(() => {
+    paramsRef.current = params;
+  }, [params]);
 
   // Fetch notifications
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await notificationsService.getNotifications(params);
+      const response = await notificationsService.getNotifications(paramsRef.current);
       setNotifications(response.data.notifications);
       setApiAvailable(true);
     } catch (err: any) {
@@ -28,7 +37,7 @@ export const useNotifications = (params: any = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [JSON.stringify(params)]);
+  }, []);
 
   // Fetch unread count
   const fetchUnreadCount = useCallback(async () => {
@@ -73,18 +82,95 @@ export const useNotifications = (params: any = {}) => {
     }
   }, [apiAvailable]);
 
+  // Initial load
   useEffect(() => {
     fetchNotifications();
     fetchUnreadCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Poll unread count setiap 30 detik hanya jika API tersedia
+  // Poll unread count setiap 30 detik
+  useEffect(() => {
     const interval = setInterval(() => {
       if (apiAvailable !== false) {
         fetchUnreadCount();
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [fetchNotifications, fetchUnreadCount, apiAvailable]);
+  }, [apiAvailable, fetchUnreadCount]);
+
+  // WebSocket listener untuk notifikasi real-time
+  useEffect(() => {
+    if (!socket || !isConnected || hasSetupWebSocket.current) {
+      return;
+    }
+
+    console.log('🔔 Setting up WebSocket notification listener...');
+    hasSetupWebSocket.current = true;
+
+    // Function untuk play notification sound
+    const playNotificationSound = () => {
+      try {
+        const audio = new Audio('/notification-sound.mp3');
+        audio.volume = 0.3;
+        audio.play().catch(e => {
+          // Ignore error jika browser block autoplay
+          console.log('Could not play notification sound:', e.message);
+        });
+      } catch (err) {
+        console.log('Notification sound error:', err);
+      }
+    };
+
+    // Function untuk show browser notification
+    const showBrowserNotification = (notification: AppNotification) => {
+      if ('Notification' in window && window.Notification.permission === 'granted') {
+        try {
+          new window.Notification(notification.title, {
+            body: notification.message,
+            icon: '/logo192.png',
+            badge: '/logo192.png',
+            tag: notification.id,
+          });
+        } catch (err) {
+          console.log('Browser notification error:', err);
+        }
+      } else if ('Notification' in window && window.Notification.permission === 'default') {
+        // Request permission
+        window.Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            showBrowserNotification(notification);
+          }
+        });
+      }
+    };
+
+    // Listen untuk notifikasi baru
+    const handleNotification = (notification: AppNotification) => {
+      console.log('🔔 New notification received via WebSocket:', notification);
+      
+      // Tambahkan notifikasi baru ke list
+      setNotifications(prev => [notification, ...prev]);
+      
+      // Increment unread count
+      setUnreadCount(prev => prev + 1);
+      
+      // Play notification sound (optional)
+      playNotificationSound();
+      
+      // Show browser notification jika diizinkan
+      showBrowserNotification(notification);
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      if (socket) {
+        socket.off('notification', handleNotification);
+        hasSetupWebSocket.current = false;
+      }
+    };
+  }, [socket, isConnected]);
 
   // Mark as read
   const markAsRead = async (id: string) => {

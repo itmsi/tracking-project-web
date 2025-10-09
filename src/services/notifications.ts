@@ -1,14 +1,28 @@
 import api from './api';
 
-export interface Notification {
+export interface AppNotification {
   id: string;
   title: string;
   message: string;
-  type: 'task_assigned' | 'task_completed' | 'task_due' | 'project_updated' | 'team_invite' | 'comment_added' | 'system';
+  type: 'task_assigned' | 'task_completed' | 'task_due' | 'project_updated' | 'team_invite' | 'comment_added' | 'chat_message' | 'reply' | 'mention' | 'system';
   is_read: boolean;
   user_id: string;
+  sender_id?: string; // ID pengirim notifikasi
   related_id?: string; // ID dari task, project, atau resource terkait
   related_type?: 'task' | 'project' | 'team' | 'comment';
+  data?: {
+    task_id?: string;
+    task_title?: string;
+    message_id?: string;
+    reply_to_message_id?: string;
+    sender_name?: string;
+    sender_email?: string;
+    full_message?: string;
+    project_name?: string;
+    team_name?: string;
+    assigner_name?: string;
+    due_date?: string;
+  };
   metadata?: {
     task_title?: string;
     project_name?: string;
@@ -18,13 +32,23 @@ export interface Notification {
   };
   created_at: string;
   read_at?: string;
+  sender?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    first_name?: string;
+    last_name?: string;
+  };
 }
+
+// Alias untuk backward compatibility
+export type Notification = AppNotification;
 
 export interface NotificationResponse {
   success: boolean;
   message: string;
   data: {
-    notifications: Notification[];
+    notifications: AppNotification[];
     pagination: {
       page: number;
       limit: number;
@@ -207,12 +231,12 @@ export const notificationsService = {
   createNotification: async (notificationData: {
     title: string;
     message: string;
-    type: Notification['type'];
+    type: AppNotification['type'];
     user_id: string;
     related_id?: string;
     related_type?: string;
     metadata?: any;
-  }): Promise<{ success: boolean; data: Notification }> => {
+  }): Promise<{ success: boolean; data: AppNotification }> => {
     try {
       const response = await api.post('/api/notifications', notificationData);
       return response.data;

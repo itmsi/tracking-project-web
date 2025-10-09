@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useTaskView } from '../../hooks/useTaskView';
 import TaskDetails from './TaskDetails';
 import TaskChatWebSocket from './TaskChatWebSocket';
@@ -55,7 +55,9 @@ const StatusChip = styled(Chip)(({ theme }) => ({
 
 const TaskViewPage: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>();
+  const [searchParams] = useSearchParams();
   const { taskView, loading, error, refetch } = useTaskView(taskId || null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   // Debugging logs - log setiap render
   useEffect(() => {
@@ -67,6 +69,22 @@ const TaskViewPage: React.FC = () => {
       taskView 
     });
   }, [taskId, loading, error, taskView]);
+
+  // Auto-scroll ke chat section jika ada query parameter ?tab=chat
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'chat' && !loading && taskView && chatRef.current) {
+      console.log('📍 Auto-scrolling to chat section...');
+      setTimeout(() => {
+        chatRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Highlight chat section
+        chatRef.current?.classList.add('chat-highlight');
+        setTimeout(() => {
+          chatRef.current?.classList.remove('chat-highlight');
+        }, 2000);
+      }, 300);
+    }
+  }, [searchParams, loading, taskView]);
 
   if (loading) {
     console.log('⏳ TaskViewPage: Showing loading state');
@@ -162,11 +180,13 @@ const TaskViewPage: React.FC = () => {
             permissions={user_permissions || null}
             onUpdate={refetch}
           />
-          <TaskChatWebSocket 
-            taskId={taskId!} 
-            permissions={user_permissions || null}
-            initialMessages={chat?.messages || []}
-          />
+          <div ref={chatRef} id="task-chat-section">
+            <TaskChatWebSocket 
+              taskId={taskId!} 
+              permissions={user_permissions || null}
+              initialMessages={chat?.messages || []}
+            />
+          </div>
         </TaskMain>
 
         <TaskSidebar>

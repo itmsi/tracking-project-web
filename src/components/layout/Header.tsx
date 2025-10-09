@@ -14,6 +14,7 @@ import {
   Badge,
   List,
   ListItem,
+  ListItemButton,
   ListItemAvatar,
   ListItemSecondaryAction,
   Chip,
@@ -38,7 +39,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { AppDispatch, RootState } from '../../store';
 import { logout } from '../../store/authSlice';
-import { notificationsService, Notification } from '../../services/notifications';
+import { notificationsService, AppNotification } from '../../services/notifications';
 import { useFocusManagement } from '../../hooks/useFocusManagement';
 import { useAriaHiddenFix } from '../../hooks/useAriaHiddenFix';
 
@@ -48,7 +49,7 @@ const Header: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,6 +160,9 @@ const Header: React.FC = () => {
       case 'team_invite':
         return <Group />;
       case 'comment_added':
+      case 'chat_message':
+      case 'reply':
+      case 'mention':
         return <Comment />;
       default:
         return <Notifications />;
@@ -178,9 +182,48 @@ const Header: React.FC = () => {
       case 'team_invite':
         return 'secondary';
       case 'comment_added':
+      case 'chat_message':
+      case 'reply':
+      case 'mention':
         return 'default';
       default:
         return 'default';
+    }
+  };
+
+  // Handle notification click - navigate ke task detail
+  const handleNotificationClick = async (notification: AppNotification) => {
+    try {
+      // Mark as read jika belum dibaca
+      if (!notification.is_read) {
+        await handleMarkAsRead(notification.id);
+      }
+      
+      // Close dropdown
+      handleNotificationClose();
+      
+      // Navigate based on notification type
+      if (notification.type === 'chat_message' || notification.type === 'reply' || notification.type === 'mention') {
+        // Untuk notifikasi chat, ambil task_id dari data
+        const taskId = notification.data?.task_id || notification.related_id;
+        if (taskId) {
+          console.log('📍 Navigating to task:', taskId);
+          navigate(`/tasks/${taskId}?tab=chat`);
+        } else {
+          console.warn('⚠️ Task ID not found in notification:', notification);
+        }
+      } else if (notification.related_type === 'task' && notification.related_id) {
+        // Untuk notifikasi task lainnya
+        navigate(`/tasks/${notification.related_id}`);
+      } else if (notification.related_type === 'project' && notification.related_id) {
+        // Untuk notifikasi project
+        navigate(`/projects/${notification.related_id}`);
+      } else if (notification.related_type === 'team' && notification.related_id) {
+        // Untuk notifikasi team
+        navigate(`/teams`);
+      }
+    } catch (err) {
+      console.error('Error handling notification click:', err);
     }
   };
 
@@ -399,14 +442,23 @@ const Header: React.FC = () => {
                 {notifications.map((notification) => (
                   <ListItem
                     key={notification.id}
-                    role="menuitem"
+                    disablePadding
                     sx={{
-                      bgcolor: notification.is_read ? 'transparent' : 'action.hover',
                       borderLeft: notification.is_read ? 'none' : '3px solid',
                       borderLeftColor: `${getNotificationColor(notification.type)}.main`,
                     }}
                   >
-                    <ListItemAvatar>
+                    <ListItemButton
+                      role="menuitem"
+                      onClick={() => handleNotificationClick(notification)}
+                      sx={{
+                        bgcolor: notification.is_read ? 'transparent' : 'action.hover',
+                        '&:hover': {
+                          bgcolor: 'action.selected',
+                        },
+                      }}
+                    >
+                      <ListItemAvatar>
                       <Avatar
                         sx={{
                           bgcolor: `${getNotificationColor(notification.type)}.main`,
@@ -470,6 +522,7 @@ const Header: React.FC = () => {
                         </IconButton>
                       </Box>
                     </ListItemSecondaryAction>
+                    </ListItemButton>
                   </ListItem>
                 ))}
               </List>
