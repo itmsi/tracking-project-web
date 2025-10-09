@@ -49,19 +49,19 @@ export interface UserSearchParams {
 export const usersService = {
   // Get Users List
   getUsers: async (params: UserSearchParams = {}): Promise<UserResponse> => {
-    const response = await api.get('/users', { params });
+      const response = await api.get('/api/users', { params });
     return response.data;
   },
 
   // Get User Detail
   getUser: async (id: string): Promise<{ success: boolean; data: User }> => {
-    const response = await api.get(`/users/${id}`);
+    const response = await api.get(`/api/users/${id}`);
     return response.data;
   },
 
   // Search Users (untuk assign task, add member, dll)
   searchUsers: async (searchTerm: string, params: any = {}): Promise<UserResponse> => {
-    const response = await api.get('/users', { 
+    const response = await api.get('/api/users', { 
       params: { ...params, search: searchTerm } 
     });
     return response.data;
@@ -69,7 +69,7 @@ export const usersService = {
 
   // Get Users by Role
   getUsersByRole: async (role: string, params: any = {}): Promise<UserResponse> => {
-    const response = await api.get('/users', { 
+    const response = await api.get('/api/users', { 
       params: { ...params, role } 
     });
     return response.data;
@@ -77,7 +77,7 @@ export const usersService = {
 
   // Get Active Users
   getActiveUsers: async (params: any = {}): Promise<UserResponse> => {
-    const response = await api.get('/users', { 
+    const response = await api.get('/api/users', { 
       params: { ...params, is_active: true } 
     });
     return response.data;
@@ -85,43 +85,43 @@ export const usersService = {
 
   // Update User (admin only)
   updateUser: async (id: string, userData: Partial<User>): Promise<{ success: boolean; data: User }> => {
-    const response = await api.put(`/users/${id}`, userData);
+    const response = await api.put(`/api/users/${id}`, userData);
     return response.data;
   },
 
   // Deactivate User (admin only)
   deactivateUser: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.patch(`/users/${id}/deactivate`);
+    const response = await api.patch(`/api/users/${id}/deactivate`);
     return response.data;
   },
 
   // Activate User (admin only)
   activateUser: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.patch(`/users/${id}/activate`);
+    const response = await api.patch(`/api/users/${id}/activate`);
     return response.data;
   },
 
   // Get User Statistics
   getUserStats: async (id: string): Promise<{ success: boolean; data: UserStats }> => {
-    const response = await api.get(`/users/${id}/stats`);
+    const response = await api.get(`/api/users/${id}/stats`);
     return response.data;
   },
 
   // Get User Projects
   getUserProjects: async (id: string, params: any = {}): Promise<{ success: boolean; data: any[] }> => {
-    const response = await api.get(`/users/${id}/projects`, { params });
+    const response = await api.get(`/api/users/${id}/projects`, { params });
     return response.data;
   },
 
   // Get User Tasks
   getUserTasks: async (id: string, params: any = {}): Promise<{ success: boolean; data: any[] }> => {
-    const response = await api.get(`/users/${id}/tasks`, { params });
+    const response = await api.get(`/api/users/${id}/tasks`, { params });
     return response.data;
   },
 
   // Get User Teams
   getUserTeams: async (id: string, params: any = {}): Promise<{ success: boolean; data: any[] }> => {
-    const response = await api.get(`/users/${id}/teams`, { params });
+    const response = await api.get(`/api/users/${id}/teams`, { params });
     return response.data;
   }
 };

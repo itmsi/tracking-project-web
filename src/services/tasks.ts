@@ -40,73 +40,73 @@ export interface TaskResponse {
 export const tasksService = {
   // Get Tasks List
   getTasks: async (params: any = {}): Promise<TaskResponse> => {
-    const response = await api.get('/tasks', { params });
+      const response = await api.get('/api/tasks', { params });
     return response.data;
   },
 
   // Create Task
   createTask: async (taskData: Partial<Task>): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.post('/tasks', taskData);
+      const response = await api.post('/api/tasks', taskData);
     return response.data;
   },
 
   // Get Task Detail
   getTask: async (id: string): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.get(`/tasks/${id}`);
+    const response = await api.get(`/api/tasks/${id}`);
     return response.data;
   },
 
   // Update Task
   updateTask: async (id: string, taskData: Partial<Task>): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.put(`/tasks/${id}`, taskData);
+    const response = await api.put(`/api/tasks/${id}`, taskData);
     return response.data;
   },
 
   // Delete Task
   deleteTask: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/tasks/${id}`);
+    const response = await api.delete(`/api/tasks/${id}`);
     return response.data;
   },
 
   // Update Task Status
   updateTaskStatus: async (id: string, status: string, position?: number): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.patch(`/tasks/${id}/status`, { status, position });
+    const response = await api.patch(`/api/tasks/${id}/status`, { status, position });
     return response.data;
   },
 
   // Assign Task
   assignTask: async (id: string, assignedTo: string | null): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.patch(`/tasks/${id}/assign`, { assigned_to: assignedTo });
+    const response = await api.patch(`/api/tasks/${id}/assign`, { assigned_to: assignedTo });
     return response.data;
   },
 
   // Update Task Position
   updateTaskPosition: async (id: string, position: number): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.patch(`/tasks/${id}/position`, { position });
+    const response = await api.patch(`/api/tasks/${id}/position`, { position });
     return response.data;
   },
 
   // Get Subtasks
   getSubtasks: async (id: string): Promise<{ success: boolean; data: Task[] }> => {
-    const response = await api.get(`/tasks/${id}/subtasks`);
+    const response = await api.get(`/api/tasks/${id}/subtasks`);
     return response.data;
   },
 
   // Create Subtask
   createSubtask: async (id: string, subtaskData: Partial<Task>): Promise<{ success: boolean; data: Task }> => {
-    const response = await api.post(`/tasks/${id}/subtasks`, subtaskData);
+    const response = await api.post(`/api/tasks/${id}/subtasks`, subtaskData);
     return response.data;
   },
 
   // Add Task Attachment
   addTaskAttachment: async (id: string, attachmentData: any): Promise<{ success: boolean; data: any }> => {
-    const response = await api.post(`/tasks/${id}/attachments`, attachmentData);
+    const response = await api.post(`/api/tasks/${id}/attachments`, attachmentData);
     return response.data;
   },
 
   // Remove Task Attachment
   removeTaskAttachment: async (id: string, attachmentId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/tasks/${id}/attachments/${attachmentId}`);
+    const response = await api.delete(`/api/tasks/${id}/attachments/${attachmentId}`);
     return response.data;
   }
 };

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
@@ -21,6 +22,7 @@ import {
   Person,
   Schedule,
   Flag,
+  Visibility,
 } from '@mui/icons-material';
 import { Task } from '../../services/tasks';
 
@@ -31,6 +33,7 @@ interface DraggableTaskCardProps {
 }
 
 const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({ task, onEdit, onDelete }) => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   
   const {
@@ -64,6 +67,11 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({ task, onEdit, onD
 
   const handleDelete = () => {
     onDelete?.(task);
+    handleMenuClose();
+  };
+
+  const handleViewTask = () => {
+    navigate(`/tasks/${task.id}`);
     handleMenuClose();
   };
 
@@ -212,6 +220,12 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({ task, onEdit, onD
           },
         }}
       >
+        <MenuItem onClick={handleViewTask}>
+          <ListItemIcon>
+            <Visibility fontSize="small" />
+          </ListItemIcon>
+          <ListItemText>View Details</ListItemText>
+        </MenuItem>
         <MenuItem onClick={handleEdit}>
           <ListItemIcon>
             <Edit fontSize="small" />

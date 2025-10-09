@@ -90,23 +90,32 @@ const projectSlice = createSlice({
       })
       .addCase(fetchProjects.fulfilled, (state, action) => {
         state.loading = false;
-        state.projects = action.payload.projects;
-        state.pagination = action.payload.pagination;
+        state.projects = action.payload?.projects || [];
+        state.pagination = action.payload?.pagination || {
+          page: 1,
+          limit: 10,
+          total: 0,
+          pages: 0,
+        };
       })
       .addCase(fetchProjects.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch projects';
       })
       .addCase(createProject.fulfilled, (state, action) => {
-        state.projects.unshift(action.payload);
+        if (action.payload) {
+          state.projects.unshift(action.payload);
+        }
       })
       .addCase(updateProject.fulfilled, (state, action) => {
-        const index = state.projects.findIndex(p => p.id === action.payload.id);
-        if (index !== -1) {
-          state.projects[index] = action.payload;
-        }
-        if (state.currentProject?.id === action.payload.id) {
-          state.currentProject = action.payload;
+        if (action.payload) {
+          const index = state.projects.findIndex(p => p.id === action.payload.id);
+          if (index !== -1) {
+            state.projects[index] = action.payload;
+          }
+          if (state.currentProject?.id === action.payload.id) {
+            state.currentProject = action.payload;
+          }
         }
       })
       .addCase(deleteProject.fulfilled, (state, action) => {

@@ -4,7 +4,13 @@
   "private": true,
   "description": "Tracking Project Team - Modern project management application with React.js and Material-UI",
   "author": "Your Name",
-  "keywords": ["react", "typescript", "material-ui", "project-management", "kanban"],
+  "keywords": [
+    "react",
+    "typescript",
+    "material-ui",
+    "project-management",
+    "kanban"
+  ],
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
@@ -25,6 +31,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "axios": "^1.12.2",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.18",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -32,6 +39,8 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.3",
     "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.5",
+    "socket.io-client": "^4.8.1",
     "typescript": "^4.9.5",
     "web-vitals": "^2.1.4",
     "yup": "^1.7.1"

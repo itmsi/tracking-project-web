@@ -32,8 +32,8 @@ const Dashboard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-  const { projects, loading: projectsLoading } = useSelector((state: RootState) => state.projects);
-  const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
+  const { projects = [], loading: projectsLoading = false } = useSelector((state: RootState) => state.projects || {});
+  const { tasks = [], loading: tasksLoading = false } = useSelector((state: RootState) => state.tasks || {});
 
   useEffect(() => {
     dispatch(fetchProjects({ limit: 5 }));

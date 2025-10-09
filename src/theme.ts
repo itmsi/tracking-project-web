@@ -179,6 +179,21 @@ export const theme = createTheme({
         disableEnforceFocus: true,
         disableAutoFocus: true,
         disableRestoreFocus: true,
+        disablePortal: false,
+      },
+      styleOverrides: {
+        root: {
+          '&[aria-hidden="true"]': {
+            display: 'none',
+          },
+        },
+      },
+    },
+    MuiMenu: {
+      defaultProps: {
+        disableEnforceFocus: true,
+        disableAutoFocus: true,
+        disableRestoreFocus: true,
       },
     },
     MuiSelect: {
@@ -188,13 +203,6 @@ export const theme = createTheme({
           disableAutoFocus: true,
           disableRestoreFocus: true,
         },
-      },
-    },
-    MuiMenu: {
-      defaultProps: {
-        disableEnforceFocus: true,
-        disableAutoFocus: true,
-        disableRestoreFocus: true,
       },
     },
   },

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -22,10 +22,11 @@ import {
   VisibilityOff,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AppDispatch, RootState } from '../../store';
 import { login, clearError } from '../../store/authSlice';
 import { LoginCredentials } from '../../services/auth';
+import { getRedirectAfterLogin } from '../../utils/authUtils';
 
 const schema = yup.object({
   email: yup.string().email('Email tidak valid').required('Email harus diisi'),
@@ -35,9 +36,22 @@ const schema = yup.object({
 const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, error } = useSelector((state: RootState) => state.auth);
   const [submitError, setSubmitError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [logoutReason, setLogoutReason] = useState<string | null>(null);
+
+  // Check untuk logout reason dari URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const reason = params.get('reason');
+    if (reason) {
+      setLogoutReason(decodeURIComponent(reason));
+      // Clear reason dari URL setelah ditampilkan
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [location]);
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -58,12 +72,16 @@ const Login: React.FC = () => {
   const onSubmit = async (data: LoginCredentials) => {
     try {
       setSubmitError('');
+      setLogoutReason(null); // Clear logout reason saat login baru
       dispatch(clearError());
       await dispatch(login(data)).unwrap();
-      navigate('/dashboard');
+      
+      // Redirect ke halaman sebelumnya atau dashboard
+      const redirectUrl = getRedirectAfterLogin();
+      navigate(redirectUrl);
     } catch (err: any) {
       if (err?.message?.includes('Network Error') || err?.code === 'ECONNREFUSED') {
-        setSubmitError('Backend API tidak tersedia. Pastikan backend berjalan di port 9552');
+        setSubmitError('Backend API tidak tersedia. Pastikan backend berjalan di port 9553');
       } else {
         setSubmitError(err || 'Login gagal');
       }
@@ -106,6 +124,12 @@ const Login: React.FC = () => {
           </Box>
 
           <CardContent sx={{ p: 4 }}>
+            {logoutReason && (
+              <Alert severity="warning" sx={{ mb: 3 }} onClose={() => setLogoutReason(null)}>
+                {logoutReason}
+              </Alert>
+            )}
+            
             {(submitError || error) && (
               <Alert severity="error" sx={{ mb: 3 }}>
                 {submitError || error}

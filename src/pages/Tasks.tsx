@@ -20,12 +20,19 @@ import {
   FilterList,
   ViewKanban,
   ViewList,
+  Sort,
+  SortByAlpha,
+  Schedule,
+  Flag,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { AppDispatch, RootState } from '../store';
-import { fetchTasks } from '../store/taskSlice';
+import { fetchTasks, deleteTask } from '../store/taskSlice';
 import KanbanBoard from '../components/tasks/KanbanBoard';
+import TaskListItem from '../components/tasks/TaskListItem';
+import ForceRefreshButton from '../components/common/ForceRefreshButton';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -51,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
+  const { tasks = [], loading = false, error = null } = useSelector((state: RootState) => state.tasks || {});
   const { id: projectId } = useParams<{ id: string }>();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,6 +69,20 @@ const Tasks: React.FC = () => {
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [statusSelectOpen, setStatusSelectOpen] = useState(false);
   const [prioritySelectOpen, setPrioritySelectOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'created_at' | 'title' | 'priority' | 'due_date'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Auto-refresh setiap 30 detik untuk memastikan data terbaru
+  useAutoRefresh({
+    interval: 30000, // 30 detik
+    enabled: true,
+    params: {
+      ...(projectId && { project_id: projectId }),
+      ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
+      ...(statusFilter !== 'all' && { status: statusFilter }),
+      ...(priorityFilter !== 'all' && { priority: priorityFilter }),
+    },
+  });
 
   // Debounce search term
   useEffect(() => {
@@ -71,6 +92,15 @@ const Tasks: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  // Sync tab value with status filter
+  useEffect(() => {
+    const statusMap = ['all', 'todo', 'in_progress', 'done', 'blocked'];
+    const tabIndex = statusMap.indexOf(statusFilter);
+    if (tabIndex !== -1 && tabIndex !== tabValue) {
+      setTabValue(tabIndex);
+    }
+  }, [statusFilter, tabValue]);
 
   // Handle focus management for Select components
   useEffect(() => {
@@ -115,17 +145,75 @@ const Tasks: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    
+    // Update status filter based on tab selection
+    const statusMap = ['all', 'todo', 'in_progress', 'done', 'blocked'];
+    const newStatus = statusMap[newValue];
+    setStatusFilter(newStatus);
+  };
+
+  const handleEditTask = (task: any) => {
+    // TODO: Implement edit task functionality
+    console.log('Edit task:', task);
+  };
+
+  const handleDeleteTask = async (task: any) => {
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      try {
+        await dispatch(deleteTask(task.id)).unwrap();
+      } catch (error) {
+        console.error('Failed to delete task:', error);
+      }
+    }
+  };
+
+  const handleStatusChange = (task: any, newStatus: string) => {
+    // TODO: Implement status change functionality
+    console.log('Change status:', task, newStatus);
   };
 
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = (task.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (task.description || '').toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+    // Only apply frontend filtering for search and priority since status is handled by API
+    const matchesSearch = !debouncedSearchTerm || 
+                         (task.title || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                         (task.description || '').toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+    return matchesSearch && matchesPriority;
+  });
+
+  const sortedTasks = [...filteredTasks].sort((a, b) => {
+    let aValue: any, bValue: any;
+    
+    switch (sortBy) {
+      case 'title':
+        aValue = a.title?.toLowerCase() || '';
+        bValue = b.title?.toLowerCase() || '';
+        break;
+      case 'priority':
+        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+        aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+        bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+        break;
+      case 'due_date':
+        aValue = a.due_date ? new Date(a.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        bValue = b.due_date ? new Date(b.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+        break;
+      case 'created_at':
+      default:
+        aValue = a.created_at ? new Date(a.created_at).getTime() : 0;
+        bValue = b.created_at ? new Date(b.created_at).getTime() : 0;
+        break;
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
   });
 
   const getStatusCounts = () => {
+    // Always use all tasks for counts to show total available
     const counts = {
       all: tasks.length,
       todo: tasks.filter(t => t.status === 'todo').length,
@@ -163,7 +251,8 @@ const Tasks: React.FC = () => {
             {projectId ? 'Manage project tasks' : 'Manage all your tasks'}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+          <ForceRefreshButton variant="icon" size="small" />
           <Button
             variant={viewMode === 'kanban' ? 'contained' : 'outlined'}
             startIcon={<ViewKanban />}
@@ -366,6 +455,67 @@ const Tasks: React.FC = () => {
               </MenuItem>
             </Select>
           </FormControl>
+
+          {/* Sorting controls for List view */}
+          {viewMode === 'list' && (
+            <>
+              <FormControl sx={{ minWidth: 120 }}>
+                <InputLabel>Sort By</InputLabel>
+                <Select
+                  value={sortBy}
+                  label="Sort By"
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  MenuProps={{
+                    disableEnforceFocus: true,
+                    disableAutoFocus: true,
+                    disableRestoreFocus: true,
+                  }}
+                >
+                  <MenuItem value="created_at">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Sort />
+                      Created Date
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="title">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <SortByAlpha />
+                      Title
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="priority">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Flag />
+                      Priority
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="due_date">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Schedule />
+                      Due Date
+                    </Box>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+
+              <FormControl sx={{ minWidth: 100 }}>
+                <InputLabel>Order</InputLabel>
+                <Select
+                  value={sortOrder}
+                  label="Order"
+                  onChange={(e) => setSortOrder(e.target.value as any)}
+                  MenuProps={{
+                    disableEnforceFocus: true,
+                    disableAutoFocus: true,
+                    disableRestoreFocus: true,
+                  }}
+                >
+                  <MenuItem value="desc">Descending</MenuItem>
+                  <MenuItem value="asc">Ascending</MenuItem>
+                </Select>
+              </FormControl>
+            </>
+          )}
         </Box>
       </Paper>
 
@@ -377,12 +527,13 @@ const Tasks: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 All Tasks
                 <Typography variant="caption" sx={{ 
-                  backgroundColor: 'primary.main', 
+                  backgroundColor: tabValue === 0 ? 'primary.main' : 'grey.400', 
                   color: 'white', 
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  fontWeight: tabValue === 0 ? 'bold' : 'normal'
                 }}>
                   {statusCounts.all}
                 </Typography>
@@ -394,12 +545,13 @@ const Tasks: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 To Do
                 <Typography variant="caption" sx={{ 
-                  backgroundColor: 'grey.500', 
+                  backgroundColor: tabValue === 1 ? 'grey.600' : 'grey.400', 
                   color: 'white', 
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  fontWeight: tabValue === 1 ? 'bold' : 'normal'
                 }}>
                   {statusCounts.todo}
                 </Typography>
@@ -411,12 +563,13 @@ const Tasks: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 In Progress
                 <Typography variant="caption" sx={{ 
-                  backgroundColor: 'info.main', 
+                  backgroundColor: tabValue === 2 ? 'info.main' : 'grey.400', 
                   color: 'white', 
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  fontWeight: tabValue === 2 ? 'bold' : 'normal'
                 }}>
                   {statusCounts.in_progress}
                 </Typography>
@@ -428,12 +581,13 @@ const Tasks: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 Done
                 <Typography variant="caption" sx={{ 
-                  backgroundColor: 'success.main', 
+                  backgroundColor: tabValue === 3 ? 'success.main' : 'grey.400', 
                   color: 'white', 
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  fontWeight: tabValue === 3 ? 'bold' : 'normal'
                 }}>
                   {statusCounts.done}
                 </Typography>
@@ -445,12 +599,13 @@ const Tasks: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 Blocked
                 <Typography variant="caption" sx={{ 
-                  backgroundColor: 'error.main', 
+                  backgroundColor: tabValue === 4 ? 'error.main' : 'grey.400', 
                   color: 'white', 
                   px: 1, 
                   py: 0.5, 
                   borderRadius: 1,
-                  fontSize: '0.75rem'
+                  fontSize: '0.75rem',
+                  fontWeight: tabValue === 4 ? 'bold' : 'normal'
                 }}>
                   {statusCounts.blocked}
                 </Typography>
@@ -472,58 +627,160 @@ const Tasks: React.FC = () => {
         <Box>
           <TabPanel value={tabValue} index={0}>
             <Typography variant="h6" gutterBottom>
-              All Tasks ({filteredTasks.length})
+              All Tasks ({sortedTasks.length})
             </Typography>
-            {/* List view implementation would go here */}
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                List view implementation coming soon...
-              </Typography>
-            </Paper>
+            {sortedTasks.length > 0 ? (
+              <Box>
+                {sortedTasks.map((task) => (
+                  <TaskListItem
+                    key={task.id}
+                    task={task}
+                    onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No tasks found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchTerm || priorityFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria' 
+                    : 'Create your first task to get started'}
+                </Typography>
+              </Paper>
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={1}>
             <Typography variant="h6" gutterBottom>
-              To Do Tasks ({filteredTasks.filter(t => t.status === 'todo').length})
+              To Do Tasks ({sortedTasks.filter(t => t.status === 'todo').length})
             </Typography>
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                List view implementation coming soon...
-              </Typography>
-            </Paper>
+            {sortedTasks.filter(t => t.status === 'todo').length > 0 ? (
+              <Box>
+                {sortedTasks
+                  .filter(t => t.status === 'todo')
+                  .map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No To Do tasks found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchTerm || priorityFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria' 
+                    : 'All tasks are in progress or completed'}
+                </Typography>
+              </Paper>
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={2}>
             <Typography variant="h6" gutterBottom>
-              In Progress Tasks ({filteredTasks.filter(t => t.status === 'in_progress').length})
+              In Progress Tasks ({sortedTasks.filter(t => t.status === 'in_progress').length})
             </Typography>
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                List view implementation coming soon...
-              </Typography>
-            </Paper>
+            {sortedTasks.filter(t => t.status === 'in_progress').length > 0 ? (
+              <Box>
+                {sortedTasks
+                  .filter(t => t.status === 'in_progress')
+                  .map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No In Progress tasks found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchTerm || priorityFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria' 
+                    : 'No tasks are currently in progress'}
+                </Typography>
+              </Paper>
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={3}>
             <Typography variant="h6" gutterBottom>
-              Done Tasks ({filteredTasks.filter(t => t.status === 'done').length})
+              Done Tasks ({sortedTasks.filter(t => t.status === 'done').length})
             </Typography>
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                List view implementation coming soon...
-              </Typography>
-            </Paper>
+            {sortedTasks.filter(t => t.status === 'done').length > 0 ? (
+              <Box>
+                {sortedTasks
+                  .filter(t => t.status === 'done')
+                  .map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No Done tasks found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchTerm || priorityFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria' 
+                    : 'No tasks have been completed yet'}
+                </Typography>
+              </Paper>
+            )}
           </TabPanel>
 
           <TabPanel value={tabValue} index={4}>
             <Typography variant="h6" gutterBottom>
-              Blocked Tasks ({filteredTasks.filter(t => t.status === 'blocked').length})
+              Blocked Tasks ({sortedTasks.filter(t => t.status === 'blocked').length})
             </Typography>
-            <Paper sx={{ p: 3, textAlign: 'center' }}>
-              <Typography variant="body1" color="text.secondary">
-                List view implementation coming soon...
-              </Typography>
-            </Paper>
+            {sortedTasks.filter(t => t.status === 'blocked').length > 0 ? (
+              <Box>
+                {sortedTasks
+                  .filter(t => t.status === 'blocked')
+                  .map((task) => (
+                    <TaskListItem
+                      key={task.id}
+                      task={task}
+                      onEdit={handleEditTask}
+                      onDelete={handleDeleteTask}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+              </Box>
+            ) : (
+              <Paper sx={{ p: 4, textAlign: 'center' }}>
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  No Blocked tasks found
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {searchTerm || priorityFilter !== 'all' 
+                    ? 'Try adjusting your search or filter criteria' 
+                    : 'No tasks are currently blocked'}
+                </Typography>
+              </Paper>
+            )}
           </TabPanel>
         </Box>
       )}

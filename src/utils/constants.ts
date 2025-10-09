@@ -4,8 +4,8 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:9552/api',
-  WS_URL: process.env.REACT_APP_WS_URL || 'ws://localhost:9552',
+  BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:9553/api',
+  WS_URL: process.env.REACT_APP_WS_URL || 'http://localhost:9553',
   TIMEOUT: 10000,
 } as const;
 

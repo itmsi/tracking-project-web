@@ -38,61 +38,61 @@ export interface ProjectResponse {
 export const projectsService = {
   // Get Projects List
   getProjects: async (params: any = {}): Promise<ProjectResponse> => {
-    const response = await api.get('/projects', { params });
+      const response = await api.get('/api/projects', { params });
     return response.data;
   },
 
   // Create Project
   createProject: async (projectData: Partial<Project>): Promise<{ success: boolean; data: Project }> => {
-    const response = await api.post('/projects', projectData);
+      const response = await api.post('/api/projects', projectData);
     return response.data;
   },
 
   // Get Project Detail
   getProject: async (id: string): Promise<{ success: boolean; data: Project }> => {
-    const response = await api.get(`/projects/${id}`);
+    const response = await api.get(`/api/projects/${id}`);
     return response.data;
   },
 
   // Update Project
   updateProject: async (id: string, projectData: Partial<Project>): Promise<{ success: boolean; data: Project }> => {
-    const response = await api.put(`/projects/${id}`, projectData);
+    const response = await api.put(`/api/projects/${id}`, projectData);
     return response.data;
   },
 
   // Delete Project
   deleteProject: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/projects/${id}`);
+    const response = await api.delete(`/api/projects/${id}`);
     return response.data;
   },
 
   // Get Project Members
   getProjectMembers: async (id: string): Promise<{ success: boolean; data: any[] }> => {
-    const response = await api.get(`/projects/${id}/members`);
+    const response = await api.get(`/api/projects/${id}/members`);
     return response.data;
   },
 
   // Add Project Member
   addProjectMember: async (id: string, memberData: { user_id: string; role: string }): Promise<{ success: boolean; data: any }> => {
-    const response = await api.post(`/projects/${id}/members`, memberData);
+    const response = await api.post(`/api/projects/${id}/members`, memberData);
     return response.data;
   },
 
   // Update Project Member
   updateProjectMember: async (id: string, userId: string, role: string): Promise<{ success: boolean; data: any }> => {
-    const response = await api.put(`/projects/${id}/members/${userId}`, { role });
+    const response = await api.put(`/api/projects/${id}/members/${userId}`, { role });
     return response.data;
   },
 
   // Remove Project Member
   removeProjectMember: async (id: string, userId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/projects/${id}/members/${userId}`);
+    const response = await api.delete(`/api/projects/${id}/members/${userId}`);
     return response.data;
   },
 
   // Get Project Statistics
   getProjectStats: async (id: string): Promise<{ success: boolean; data: ProjectStats }> => {
-    const response = await api.get(`/projects/${id}/stats`);
+    const response = await api.get(`/api/projects/${id}/stats`);
     return response.data;
   }
 };

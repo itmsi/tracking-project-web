@@ -52,12 +52,15 @@ export const notificationsService = {
   // Get Notifications
   getNotifications: async (params: any = {}): Promise<NotificationResponse> => {
     try {
-      const response = await api.get('/notifications', { params });
+      const response = await api.get('/api/notifications', { params });
       return response.data;
     } catch (error: any) {
-      // Jika endpoint belum tersedia (404), return data kosong
-      if (error.response?.status === 404) {
-        console.warn('Notifications API belum tersedia di backend');
+      // Jika endpoint belum tersedia (404) atau network error, return data kosong
+      if (error.response?.status === 404 || error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        // Tidak log error untuk 404 karena API belum tersedia
+        if (error.response?.status !== 404) {
+          console.warn('Notifications API tidak tersedia');
+        }
         return {
           success: true,
           message: 'Notifications API belum tersedia',
@@ -79,14 +82,17 @@ export const notificationsService = {
   // Get Unread Notifications
   getUnreadNotifications: async (params: any = {}): Promise<NotificationResponse> => {
     try {
-      const response = await api.get('/notifications', { 
+      const response = await api.get('/api/notifications', { 
         params: { ...params, unread_only: true } 
       });
       return response.data;
     } catch (error: any) {
-      // Jika endpoint belum tersedia (404), return data kosong
-      if (error.response?.status === 404) {
-        console.warn('Notifications API belum tersedia di backend');
+      // Jika endpoint belum tersedia (404) atau network error, return data kosong
+      if (error.response?.status === 404 || error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        // Tidak log error untuk 404 karena API belum tersedia
+        if (error.response?.status !== 404) {
+          console.warn('Notifications API tidak tersedia');
+        }
         return {
           success: true,
           message: 'Notifications API belum tersedia',
@@ -106,14 +112,17 @@ export const notificationsService = {
   },
 
   // Get Unread Count
-  getUnreadCount: async (): Promise<{ success: boolean; data: { count: number } }> => {
+  getUnreadCount: async (): Promise<{ success: boolean; data: { count?: number; unread_count?: number } }> => {
     try {
-      const response = await api.get('/notifications/unread-count');
+      const response = await api.get('/api/notifications/unread-count');
       return response.data;
     } catch (error: any) {
-      // Jika endpoint belum tersedia (404), return count 0
-      if (error.response?.status === 404) {
-        console.warn('Notifications unread count API belum tersedia di backend');
+      // Jika endpoint belum tersedia (404) atau network error, return count 0
+      if (error.response?.status === 404 || error.code === 'ECONNREFUSED' || error.message.includes('Network Error')) {
+        // Tidak log error untuk 404 karena API belum tersedia
+        if (error.response?.status !== 404) {
+          console.warn('Notifications unread count API tidak tersedia');
+        }
         return {
           success: true,
           data: { count: 0 }
@@ -126,7 +135,7 @@ export const notificationsService = {
   // Mark Notification as Read
   markAsRead: async (id: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.patch(`/notifications/${id}/read`);
+      const response = await api.patch(`/api/notifications/${id}/read`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -140,7 +149,7 @@ export const notificationsService = {
   // Mark All Notifications as Read
   markAllAsRead: async (): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.patch('/notifications/read-all');
+      const response = await api.patch('/api/notifications/read-all');
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -154,7 +163,7 @@ export const notificationsService = {
   // Delete Notification
   deleteNotification: async (id: string): Promise<{ success: boolean; message: string }> => {
     try {
-      const response = await api.delete(`/notifications/${id}`);
+      const response = await api.delete(`/api/notifications/${id}`);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -168,7 +177,7 @@ export const notificationsService = {
   // Get Notification Statistics
   getNotificationStats: async (): Promise<{ success: boolean; data: NotificationStats }> => {
     try {
-      const response = await api.get('/notifications/stats');
+      const response = await api.get('/api/notifications/stats');
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {
@@ -205,7 +214,7 @@ export const notificationsService = {
     metadata?: any;
   }): Promise<{ success: boolean; data: Notification }> => {
     try {
-      const response = await api.post('/notifications', notificationData);
+      const response = await api.post('/api/notifications', notificationData);
       return response.data;
     } catch (error: any) {
       if (error.response?.status === 404) {

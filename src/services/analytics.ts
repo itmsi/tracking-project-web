@@ -116,7 +116,7 @@ export type AnalyticsPeriod = 'week' | 'month' | 'quarter' | 'year';
 export const analyticsService = {
   // Get Dashboard Analytics
   getDashboardAnalytics: async (period: AnalyticsPeriod = 'month'): Promise<{ success: boolean; data: DashboardAnalytics }> => {
-    const response = await api.get('/analytics/dashboard', { 
+    const response = await api.get('/api/analytics/dashboard', { 
       params: { period } 
     });
     return response.data;
@@ -127,7 +127,7 @@ export const analyticsService = {
     const params: any = { period };
     if (projectId) params.project_id = projectId;
     
-    const response = await api.get('/analytics/projects', { params });
+    const response = await api.get('/api/analytics/projects', { params });
     return response.data;
   },
 
@@ -136,7 +136,7 @@ export const analyticsService = {
     const params: any = { period };
     if (projectId) params.project_id = projectId;
     
-    const response = await api.get('/analytics/tasks', { params });
+    const response = await api.get('/api/analytics/tasks', { params });
     return response.data;
   },
 
@@ -145,7 +145,7 @@ export const analyticsService = {
     const params: any = { period };
     if (teamId) params.team_id = teamId;
     
-    const response = await api.get('/analytics/teams', { params });
+    const response = await api.get('/api/analytics/teams', { params });
     return response.data;
   },
 
@@ -154,7 +154,7 @@ export const analyticsService = {
     const params: any = { period };
     if (userId) params.user_id = userId;
     
-    const response = await api.get('/analytics/users', { params });
+    const response = await api.get('/api/analytics/users', { params });
     return response.data;
   },
 
@@ -163,7 +163,7 @@ export const analyticsService = {
     const params: any = { period };
     if (days) params.days = days;
     
-    const response = await api.get('/analytics/productivity-trends', { params });
+    const response = await api.get('/api/analytics/productivity-trends', { params });
     return response.data;
   },
 

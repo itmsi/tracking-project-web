@@ -49,6 +49,7 @@ import { fetchTasks, createTask, updateTaskStatus } from '../../store/taskSlice'
 import { Task } from '../../services/tasks';
 import DraggableTaskCard from './DraggableTaskCard';
 import DroppableColumn from './DroppableColumn';
+import ForceRefreshButton from '../common/ForceRefreshButton';
 
 interface KanbanBoardProps {
   projectId?: string;
@@ -64,7 +65,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
   priorityFilter 
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { tasks, loading } = useSelector((state: RootState) => state.tasks);
+  const { tasks = [] } = useSelector((state: RootState) => state.tasks || {});
   
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
@@ -196,6 +197,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <Box sx={{ p: 2 }}>
+      {/* Force Refresh Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <ForceRefreshButton 
+          variant="button" 
+          size="small"
+          onRefresh={() => {
+            const params: any = {};
+            if (projectId) params.project_id = projectId;
+            if (searchTerm) params.search = searchTerm;
+            if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+            if (priorityFilter && priorityFilter !== 'all') params.priority = priorityFilter;
+            dispatch(fetchTasks(params));
+          }}
+        />
+      </Box>
+      
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}

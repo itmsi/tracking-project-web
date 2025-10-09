@@ -36,13 +36,13 @@ export interface AuthResponse {
 export const authService = {
   // Register
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post('/auth/register', userData);
+    const response = await api.post('/api/auth/register', userData);
     return response.data;
   },
 
   // Login
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await api.post('/auth/login', credentials);
+    const response = await api.post('/api/auth/login', credentials);
     
     // Simpan token ke localStorage
     if (response.data.data?.access_token) {
@@ -57,13 +57,13 @@ export const authService = {
 
   // Get Profile
   getProfile: async (): Promise<{ success: boolean; data: User }> => {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/api/auth/me');
     return response.data;
   },
 
   // Update Profile
   updateProfile: async (profileData: Partial<User>): Promise<{ success: boolean; data: User }> => {
-    const response = await api.put('/auth/profile', profileData);
+    const response = await api.put('/api/auth/profile', profileData);
     return response.data;
   },
 
@@ -73,14 +73,14 @@ export const authService = {
     new_password: string;
     confirm_password: string;
   }): Promise<{ success: boolean; message: string }> => {
-    const response = await api.put('/auth/change-password', passwordData);
+    const response = await api.put('/api/auth/change-password', passwordData);
     return response.data;
   },
 
   // Logout
   logout: async (): Promise<{ success: boolean; message: string }> => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/api/auth/logout');
     } finally {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -90,7 +90,7 @@ export const authService = {
 
   // Refresh Token
   refreshToken: async (refreshToken: string): Promise<AuthResponse> => {
-    const response = await api.post('/auth/refresh-token', {
+    const response = await api.post('/api/auth/refresh-token', {
       refresh_token: refreshToken
     });
     return response.data;

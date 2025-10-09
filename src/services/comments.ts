@@ -52,19 +52,19 @@ export interface UpdateCommentData {
 export const commentsService = {
   // Get Comments by Task
   getCommentsByTask: async (taskId: string, params: any = {}): Promise<CommentResponse> => {
-    const response = await api.get(`/comments/task/${taskId}`, { params });
+    const response = await api.get(`/api/comments/task/${taskId}`, { params });
     return response.data;
   },
 
   // Get Comments by Project
   getCommentsByProject: async (projectId: string, params: any = {}): Promise<CommentResponse> => {
-    const response = await api.get(`/comments/project/${projectId}`, { params });
+    const response = await api.get(`/api/comments/project/${projectId}`, { params });
     return response.data;
   },
 
   // Get All Comments (with filters)
   getComments: async (params: any = {}): Promise<CommentResponse> => {
-    const response = await api.get('/comments', { params });
+      const response = await api.get('/api/comments', { params });
     return response.data;
   },
 
@@ -83,7 +83,7 @@ export const commentsService = {
       });
     }
 
-    const response = await api.post(`/comments/task/${taskId}`, formData, {
+    const response = await api.post(`/api/comments/task/${taskId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -106,7 +106,7 @@ export const commentsService = {
       });
     }
 
-    const response = await api.post(`/comments/project/${projectId}`, formData, {
+    const response = await api.post(`/api/comments/project/${projectId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -116,19 +116,19 @@ export const commentsService = {
 
   // Update Comment
   updateComment: async (id: string, commentData: UpdateCommentData): Promise<{ success: boolean; data: Comment }> => {
-    const response = await api.put(`/comments/${id}`, commentData);
+    const response = await api.put(`/api/comments/${id}`, commentData);
     return response.data;
   },
 
   // Delete Comment
   deleteComment: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/comments/${id}`);
+    const response = await api.delete(`/api/comments/${id}`);
     return response.data;
   },
 
   // Get Comment Replies
   getCommentReplies: async (commentId: string, params: any = {}): Promise<CommentResponse> => {
-    const response = await api.get(`/comments/${commentId}/replies`, { params });
+    const response = await api.get(`/api/comments/${commentId}/replies`, { params });
     return response.data;
   }
 };

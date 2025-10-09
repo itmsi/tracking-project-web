@@ -39,6 +39,8 @@ import { useNavigate } from 'react-router-dom';
 import { AppDispatch, RootState } from '../../store';
 import { logout } from '../../store/authSlice';
 import { notificationsService, Notification } from '../../services/notifications';
+import { useFocusManagement } from '../../hooks/useFocusManagement';
+import { useAriaHiddenFix } from '../../hooks/useAriaHiddenFix';
 
 const Header: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -51,6 +53,13 @@ const Header: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Focus management untuk notification menu
+  const notificationFocusManagement = useFocusManagement(Boolean(notificationAnchorEl));
+  const accountFocusManagement = useFocusManagement(Boolean(anchorEl));
+
+  // Fix aria-hidden issues
+  useAriaHiddenFix(Boolean(notificationAnchorEl) || Boolean(anchorEl));
+
   // Load notifications
   const loadNotifications = async () => {
     try {
@@ -60,7 +69,7 @@ const Header: React.FC = () => {
       setNotifications(response.data.notifications);
       
       const unreadResponse = await notificationsService.getUnreadCount();
-      setUnreadCount(unreadResponse.data.count);
+      setUnreadCount(unreadResponse.data.count ?? 0);
     } catch (err: any) {
       console.error('Error loading notifications:', err);
       // Jika error 404, tidak perlu set error karena sudah dihandle di service
@@ -76,7 +85,7 @@ const Header: React.FC = () => {
   const loadUnreadCount = async () => {
     try {
       const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.data.count);
+      setUnreadCount(response.data.count ?? 0);
     } catch (err: any) {
       console.error('Error loading unread count:', err);
       // Jika error 404, set count ke 0 (sudah dihandle di service)
@@ -211,9 +220,13 @@ const Header: React.FC = () => {
           </IconButton>
 
           <IconButton 
+            id="notification-button"
             color="inherit" 
             size="large"
             onClick={handleNotificationMenu}
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            aria-haspopup="true"
+            aria-expanded={Boolean(notificationAnchorEl)}
           >
             <Badge badgeContent={unreadCount} color="error">
               <Notifications />
@@ -221,10 +234,12 @@ const Header: React.FC = () => {
           </IconButton>
 
           <IconButton
+            id="account-button"
             size="large"
             aria-label="account of current user"
             aria-controls="menu-appbar"
             aria-haspopup="true"
+            aria-expanded={Boolean(anchorEl)}
             onClick={handleMenu}
             color="inherit"
           >
@@ -250,6 +265,7 @@ const Header: React.FC = () => {
             }}
             open={Boolean(anchorEl)}
             onClose={handleClose}
+            onKeyDown={accountFocusManagement.handleKeyDown}
             PaperProps={{
               sx: {
                 mt: 1,
@@ -258,6 +274,14 @@ const Header: React.FC = () => {
                 borderRadius: 2,
               },
             }}
+            MenuListProps={{
+              'aria-labelledby': 'account-button',
+              role: 'menu',
+            }}
+            disableAutoFocusItem={false}
+            autoFocus={true}
+            disableEnforceFocus={true}
+            disableRestoreFocus={true}
           >
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle2" fontWeight="bold">
@@ -298,6 +322,7 @@ const Header: React.FC = () => {
             anchorEl={notificationAnchorEl}
             open={Boolean(notificationAnchorEl)}
             onClose={handleNotificationClose}
+            onKeyDown={notificationFocusManagement.handleKeyDown}
             PaperProps={{
               sx: {
                 mt: 1,
@@ -316,6 +341,23 @@ const Header: React.FC = () => {
               vertical: 'bottom',
               horizontal: 'right',
             }}
+            MenuListProps={{
+              'aria-labelledby': 'notification-button',
+              role: 'menu',
+            }}
+            slotProps={{
+              root: {
+                slotProps: {
+                  backdrop: {
+                    invisible: false,
+                  },
+                },
+              },
+            }}
+            disableAutoFocusItem={false}
+            autoFocus={true}
+            disableEnforceFocus={true}
+            disableRestoreFocus={true}
           >
             <Box sx={{ px: 2, py: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -353,10 +395,11 @@ const Header: React.FC = () => {
                 </Typography>
               </Box>
             ) : (
-              <List sx={{ maxHeight: 300, overflow: 'auto' }}>
+              <List sx={{ maxHeight: 300, overflow: 'auto' }} role="menu">
                 {notifications.map((notification) => (
                   <ListItem
                     key={notification.id}
+                    role="menuitem"
                     sx={{
                       bgcolor: notification.is_read ? 'transparent' : 'action.hover',
                       borderLeft: notification.is_read ? 'none' : '3px solid',
@@ -407,6 +450,9 @@ const Header: React.FC = () => {
                             size="small"
                             onClick={() => handleMarkAsRead(notification.id)}
                             title="Mark as read"
+                            aria-label={`Mark notification "${notification.title}" as read`}
+                            role="menuitem"
+                            tabIndex={0}
                           >
                             <MarkEmailRead fontSize="small" />
                           </IconButton>
@@ -416,6 +462,9 @@ const Header: React.FC = () => {
                           onClick={() => handleDeleteNotification(notification.id)}
                           title="Delete"
                           color="error"
+                          aria-label={`Delete notification "${notification.title}"`}
+                          role="menuitem"
+                          tabIndex={0}
                         >
                           <Close fontSize="small" />
                         </IconButton>

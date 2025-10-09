@@ -61,7 +61,7 @@ function TabPanel(props: TabPanelProps) {
 
 const Projects: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { projects, loading, error } = useSelector((state: RootState) => state.projects);
+  const { projects = [], loading = false, error = null } = useSelector((state: RootState) => state.projects || {});
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

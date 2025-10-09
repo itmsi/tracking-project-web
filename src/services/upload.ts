@@ -90,7 +90,7 @@ export const uploadService = {
       },
     };
 
-    const response = await api.post('/upload', formData, config);
+    const response = await api.post('/api/upload', formData, config);
     return response.data;
   },
 
@@ -131,7 +131,7 @@ export const uploadService = {
       },
     };
 
-    const response = await api.post('/upload/batch', formData, config);
+    const response = await api.post('/api/upload/batch', formData, config);
     return response.data;
   },
 
@@ -219,13 +219,13 @@ export const uploadService = {
 
   // Get User Files
   getUserFiles: async (params: any = {}): Promise<{ success: boolean; data: { files: UploadedFile[]; pagination: any } }> => {
-    const response = await api.get('/upload/user/files', { params });
+    const response = await api.get('/api/upload/user/files', { params });
     return response.data;
   },
 
   // Get Files by Type
   getFilesByType: async (type: UploadType, params: any = {}): Promise<{ success: boolean; data: { files: UploadedFile[]; pagination: any } }> => {
-    const response = await api.get('/upload/files', { 
+    const response = await api.get('/api/upload/files', { 
       params: { ...params, type } 
     });
     return response.data;
@@ -233,7 +233,7 @@ export const uploadService = {
 
   // Get Files by Related ID
   getFilesByRelatedId: async (relatedId: string, relatedType: string, params: any = {}): Promise<{ success: boolean; data: { files: UploadedFile[]; pagination: any } }> => {
-    const response = await api.get('/upload/files', { 
+    const response = await api.get('/api/upload/files', { 
       params: { ...params, related_id: relatedId, related_type: relatedType } 
     });
     return response.data;
@@ -247,7 +247,7 @@ export const uploadService = {
 
   // Get Upload Limits
   getUploadLimits: async (): Promise<{ success: boolean; data: { max_file_size: number; allowed_types: string[]; max_files_per_upload: number } }> => {
-    const response = await api.get('/upload/limits');
+    const response = await api.get('/api/upload/limits');
     return response.data;
   }
 };

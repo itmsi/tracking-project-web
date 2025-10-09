@@ -86,7 +86,7 @@ const Register: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       if (err?.message?.includes('Network Error') || err?.code === 'ECONNREFUSED') {
-        setSubmitError('Backend API tidak tersedia. Pastikan backend berjalan di port 9552');
+        setSubmitError('Backend API tidak tersedia. Pastikan backend berjalan di port 9553');
       } else {
         setSubmitError(err || 'Registrasi gagal');
       }

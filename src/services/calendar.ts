@@ -88,13 +88,13 @@ export interface CalendarViewParams {
 export const calendarService = {
   // Get Calendar Events
   getEvents: async (params: CalendarViewParams): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events', { params });
+    const response = await api.get('/api/calendar/events', { params });
     return response.data;
   },
 
   // Get Events for Date Range
   getEventsByDateRange: async (startDate: string, endDate: string, filters: any = {}): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events', { 
+    const response = await api.get('/api/calendar/events', { 
       params: { 
         start_date: startDate, 
         end_date: endDate,
@@ -106,7 +106,7 @@ export const calendarService = {
 
   // Get Project Events
   getProjectEvents: async (projectId: string, params: any = {}): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events', { 
+    const response = await api.get('/api/calendar/events', { 
       params: { 
         project_id: projectId,
         ...params 
@@ -117,7 +117,7 @@ export const calendarService = {
 
   // Get User Events
   getUserEvents: async (userId: string, params: any = {}): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events', { 
+    const response = await api.get('/api/calendar/events', { 
       params: { 
         user_id: userId,
         ...params 
@@ -128,7 +128,7 @@ export const calendarService = {
 
   // Get Team Events
   getTeamEvents: async (teamId: string, params: any = {}): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events', { 
+    const response = await api.get('/api/calendar/events', { 
       params: { 
         team_id: teamId,
         ...params 
@@ -139,7 +139,7 @@ export const calendarService = {
 
   // Create Calendar Event
   createEvent: async (eventData: CreateEventData): Promise<{ success: boolean; data: CalendarEvent }> => {
-    const response = await api.post('/calendar/events', eventData);
+    const response = await api.post('/api/calendar/events', eventData);
     return response.data;
   },
 
@@ -169,7 +169,7 @@ export const calendarService = {
 
   // Get Upcoming Events
   getUpcomingEvents: async (days: number = 7): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events/upcoming', { 
+    const response = await api.get('/api/calendar/events/upcoming', { 
       params: { days } 
     });
     return response.data;
@@ -177,13 +177,13 @@ export const calendarService = {
 
   // Get Today's Events
   getTodayEvents: async (): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events/today');
+    const response = await api.get('/api/calendar/events/today');
     return response.data;
   },
 
   // Get Overdue Events
   getOverdueEvents: async (): Promise<CalendarEventResponse> => {
-    const response = await api.get('/calendar/events/overdue');
+    const response = await api.get('/api/calendar/events/overdue');
     return response.data;
   },
 

@@ -103,91 +103,91 @@ export interface UpdateSettingsData {
 export const settingsService = {
   // Get User Settings
   getSettings: async (): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.get('/settings');
+    const response = await api.get('/api/settings');
     return response.data;
   },
 
   // Update User Settings
   updateSettings: async (settingsData: UpdateSettingsData): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.put('/settings', settingsData);
+    const response = await api.put('/api/settings', settingsData);
     return response.data;
   },
 
   // Reset Settings to Default
   resetToDefault: async (): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.post('/settings/reset');
+    const response = await api.post('/api/settings/reset');
     return response.data;
   },
 
   // Update Notification Settings
   updateNotificationSettings: async (notifications: Partial<NotificationSettings>): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/notifications', { notifications });
+    const response = await api.patch('/api/settings/notifications', { notifications });
     return response.data;
   },
 
   // Update Dashboard Settings
   updateDashboardSettings: async (dashboard: Partial<DashboardSettings>): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/dashboard', { dashboard });
+    const response = await api.patch('/api/settings/dashboard', { dashboard });
     return response.data;
   },
 
   // Update Kanban Settings
   updateKanbanSettings: async (kanban: Partial<KanbanSettings>): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/kanban', { kanban });
+    const response = await api.patch('/api/settings/kanban', { kanban });
     return response.data;
   },
 
   // Update Calendar Settings
   updateCalendarSettings: async (calendar: Partial<CalendarSettings>): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/calendar', { calendar });
+    const response = await api.patch('/api/settings/calendar', { calendar });
     return response.data;
   },
 
   // Update Privacy Settings
   updatePrivacySettings: async (privacy: Partial<PrivacySettings>): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/privacy', { privacy });
+    const response = await api.patch('/api/settings/privacy', { privacy });
     return response.data;
   },
 
   // Update Theme
   updateTheme: async (theme: UserSettings['theme']): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/theme', { theme });
+    const response = await api.patch('/api/settings/theme', { theme });
     return response.data;
   },
 
   // Update Language
   updateLanguage: async (language: UserSettings['language']): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/language', { language });
+    const response = await api.patch('/api/settings/language', { language });
     return response.data;
   },
 
   // Update Timezone
   updateTimezone: async (timezone: string): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.patch('/settings/timezone', { timezone });
+    const response = await api.patch('/api/settings/timezone', { timezone });
     return response.data;
   },
 
   // Get Available Timezones
   getAvailableTimezones: async (): Promise<{ success: boolean; data: string[] }> => {
-    const response = await api.get('/settings/timezones');
+    const response = await api.get('/api/settings/timezones');
     return response.data;
   },
 
   // Get Available Languages
   getAvailableLanguages: async (): Promise<{ success: boolean; data: Array<{ code: string; name: string; native_name: string }> }> => {
-    const response = await api.get('/settings/languages');
+    const response = await api.get('/api/settings/languages');
     return response.data;
   },
 
   // Export Settings
   exportSettings: async (): Promise<{ success: boolean; data: { settings: UserSettings; export_date: string } }> => {
-    const response = await api.get('/settings/export');
+    const response = await api.get('/api/settings/export');
     return response.data;
   },
 
   // Import Settings
   importSettings: async (settingsData: any): Promise<{ success: boolean; data: UserSettings }> => {
-    const response = await api.post('/settings/import', { settings: settingsData });
+    const response = await api.post('/api/settings/import', { settings: settingsData });
     return response.data;
   }
 };
