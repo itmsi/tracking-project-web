@@ -21,6 +21,7 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Snackbar,
 } from '@mui/material';
 import {
   AccountCircle,
@@ -42,6 +43,7 @@ import { logout } from '../../store/authSlice';
 import { notificationsService, AppNotification } from '../../services/notifications';
 import { useFocusManagement } from '../../hooks/useFocusManagement';
 import { useAriaHiddenFix } from '../../hooks/useAriaHiddenFix';
+import { useWebSocket } from '../../contexts/WebSocketContext';
 
 const Header: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -53,6 +55,10 @@ const Header: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const { socket, isConnected } = useWebSocket();
+  const hasSetupWebSocket = React.useRef(false);
 
   // Focus management untuk notification menu
   const notificationFocusManagement = useFocusManagement(Boolean(notificationAnchorEl));
@@ -67,10 +73,13 @@ const Header: React.FC = () => {
       setLoading(true);
       setError(null);
       const response = await notificationsService.getNotifications({ limit: 10 });
+      console.log('📋 Notifications loaded:', response.data.notifications.length);
       setNotifications(response.data.notifications);
       
       const unreadResponse = await notificationsService.getUnreadCount();
-      setUnreadCount(unreadResponse.data.count ?? 0);
+      const count = unreadResponse.data.count ?? unreadResponse.data.unread_count ?? 0;
+      console.log('🔔 Initial unread count:', count);
+      setUnreadCount(count);
     } catch (err: any) {
       console.error('Error loading notifications:', err);
       // Jika error 404, tidak perlu set error karena sudah dihandle di service
@@ -86,7 +95,9 @@ const Header: React.FC = () => {
   const loadUnreadCount = async () => {
     try {
       const response = await notificationsService.getUnreadCount();
-      setUnreadCount(response.data.count ?? 0);
+      const count = response.data.count ?? response.data.unread_count ?? 0;
+      console.log('🔔 Unread count loaded:', count);
+      setUnreadCount(count);
     } catch (err: any) {
       console.error('Error loading unread count:', err);
       // Jika error 404, set count ke 0 (sudah dihandle di service)
@@ -104,6 +115,73 @@ const Header: React.FC = () => {
       return () => clearInterval(interval);
     }
   }, [user]);
+
+  // Update browser tab title saat ada notifikasi baru
+  useEffect(() => {
+    const originalTitle = 'Tracking Project Team';
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount}) ${originalTitle} - Ada Pesan Baru!`;
+    } else {
+      document.title = originalTitle;
+    }
+    
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [unreadCount]);
+
+  // Show toast notification saat unread count bertambah
+  const prevUnreadCount = React.useRef(unreadCount);
+  useEffect(() => {
+    console.log('📊 Unread count changed:', {
+      previous: prevUnreadCount.current,
+      current: unreadCount,
+      diff: unreadCount - prevUnreadCount.current
+    });
+    
+    if (unreadCount > prevUnreadCount.current && unreadCount > 0) {
+      const newNotifications = unreadCount - prevUnreadCount.current;
+      console.log('🎉 Showing toast for', newNotifications, 'new notifications');
+      setToastMessage(`🔔 Anda punya ${newNotifications} pesan baru!`);
+      setShowToast(true);
+    }
+    prevUnreadCount.current = unreadCount;
+  }, [unreadCount]);
+
+  // WebSocket listener untuk notifikasi real-time
+  useEffect(() => {
+    if (!socket || !isConnected || hasSetupWebSocket.current) {
+      return;
+    }
+
+    console.log('🔔 Header: Setting up WebSocket notification listener...');
+    hasSetupWebSocket.current = true;
+
+    // Listen untuk notifikasi baru
+    const handleNotification = (notification: AppNotification) => {
+      console.log('🔔 Header: New notification received via WebSocket:', notification);
+      
+      // Tambahkan notifikasi baru ke list
+      setNotifications(prev => [notification, ...prev]);
+      
+      // Increment unread count
+      setUnreadCount(prev => {
+        const newCount = prev + 1;
+        console.log('📈 Header: Unread count incremented:', prev, '→', newCount);
+        return newCount;
+      });
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      if (socket) {
+        console.log('🧹 Header: Cleaning up WebSocket notification listener');
+        socket.off('notification', handleNotification);
+        hasSetupWebSocket.current = false;
+      }
+    };
+  }, [socket, isConnected]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -270,9 +348,49 @@ const Header: React.FC = () => {
             aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
             aria-haspopup="true"
             aria-expanded={Boolean(notificationAnchorEl)}
+            sx={{
+              position: 'relative',
+            }}
           >
-            <Badge badgeContent={unreadCount} color="error">
-              <Notifications />
+            <Badge 
+              badgeContent={unreadCount} 
+              color="error"
+              max={99}
+              showZero={false}
+              sx={{
+                '& .MuiBadge-badge': {
+                  fontSize: '13px',
+                  height: '24px',
+                  minWidth: '24px',
+                  fontWeight: 'bold',
+                  padding: '0 6px',
+                  animation: unreadCount > 0 ? 'pulse 2s infinite' : 'none',
+                  boxShadow: unreadCount > 0 ? '0 0 15px rgba(244, 67, 54, 0.9)' : 'none',
+                  border: unreadCount > 0 ? '2px solid white' : 'none',
+                },
+                '@keyframes pulse': {
+                  '0%': {
+                    transform: 'scale(1)',
+                    opacity: 1,
+                  },
+                  '50%': {
+                    transform: 'scale(1.2)',
+                    opacity: 0.85,
+                  },
+                  '100%': {
+                    transform: 'scale(1)',
+                    opacity: 1,
+                  },
+                },
+              }}
+            >
+              <Notifications 
+                sx={{ 
+                  fontSize: unreadCount > 0 ? 30 : 26,
+                  transition: 'all 0.3s ease',
+                  color: unreadCount > 0 ? '#ffeb3b' : 'white',
+                }} 
+              />
             </Badge>
           </IconButton>
 
@@ -530,6 +648,25 @@ const Header: React.FC = () => {
           </Menu>
         </Box>
       </Toolbar>
+
+      {/* Toast Notification untuk pesan baru */}
+      <Snackbar
+        open={showToast}
+        autoHideDuration={4000}
+        onClose={() => setShowToast(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        sx={{ 
+          mt: 8,
+          '& .MuiSnackbarContent-root': {
+            backgroundColor: '#f44336',
+            color: 'white',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 12px rgba(244, 67, 54, 0.5)',
+          }
+        }}
+        message={toastMessage}
+      />
     </AppBar>
   );
 };
