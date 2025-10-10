@@ -83,13 +83,28 @@ interface TaskAttachmentsProps {
 
 const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: initialAttachments, permissions, onUpdate }) => {
   const {
-    attachments,
+    attachments: hookAttachments,
     loading,
     error,
     uploading,
     uploadFile,
-    deleteFile
+    deleteFile,
+    refresh
   } = useTaskAttachments(taskId);
+
+  // Gunakan initialAttachments dari props sebagai primary source
+  // Hook attachments sebagai fallback dan untuk upload/delete operations
+  const attachments = initialAttachments?.length > 0 ? initialAttachments : hookAttachments;
+
+  // Debug logging
+  console.log('📎 TaskAttachments render:', {
+    taskId,
+    initialAttachmentsCount: initialAttachments?.length || 0,
+    hookAttachmentsCount: hookAttachments?.length || 0,
+    finalAttachmentsCount: attachments?.length || 0,
+    usingProps: initialAttachments?.length > 0,
+    usingHook: !initialAttachments || initialAttachments.length === 0
+  });
 
   const [showUpload, setShowUpload] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -122,11 +137,18 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
       setShowUpload(false);
       showNotification('File uploaded successfully', 'success');
       
-      // Refresh data setelah upload berhasil
+      // Refresh data dari multiple sources setelah upload berhasil
+      console.log('🔄 Refreshing attachments after upload...');
+      
+      // 1. Refresh hook data
+      await refresh();
+      
+      // 2. Refresh parent data (TaskView)
       if (onUpdate) {
         onUpdate();
       }
     } catch (error: any) {
+      console.error('❌ Upload error:', error);
       showNotification(error.message, 'error');
     }
   };
@@ -138,11 +160,18 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
       await deleteFile(attachmentId);
       showNotification('File deleted successfully', 'success');
       
-      // Refresh data setelah delete berhasil
+      // Refresh data dari multiple sources setelah delete berhasil
+      console.log('🔄 Refreshing attachments after delete...');
+      
+      // 1. Refresh hook data
+      await refresh();
+      
+      // 2. Refresh parent data (TaskView)
       if (onUpdate) {
         onUpdate();
       }
     } catch (error: any) {
+      console.error('❌ Delete error:', error);
       showNotification(error.message, 'error');
     }
   };

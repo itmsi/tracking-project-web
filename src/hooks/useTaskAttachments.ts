@@ -28,7 +28,7 @@ export const useTaskAttachments = (taskId: string | null) => {
       setLoading(true);
       setError(null);
       const response = await taskViewService.getTaskAttachments(taskId, filters);
-      setAttachments(response.data.attachments);
+      setAttachments(response.data.attachments || []);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load attachments');
     } finally {
@@ -47,7 +47,7 @@ export const useTaskAttachments = (taskId: string | null) => {
         is_public: metadata.isPublic !== false
       });
       
-      setAttachments(prev => [response.data, ...prev]);
+      setAttachments(prev => [response.data, ...(prev || [])]);
       return response.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Failed to upload file');
@@ -61,7 +61,7 @@ export const useTaskAttachments = (taskId: string | null) => {
 
     try {
       await taskViewService.deleteAttachment(taskId, attachmentId);
-      setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+      setAttachments(prev => (prev || []).filter(att => att.id !== attachmentId));
     } catch (err: any) {
       throw new Error(err.response?.data?.message || 'Failed to delete file');
     }
