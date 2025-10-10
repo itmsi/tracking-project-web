@@ -159,7 +159,7 @@ const DraggableTaskCard: React.FC<DraggableTaskCardProps> = ({ task, onEdit, onD
               src={task.assignee_avatar_url}
               sx={{ width: 24, height: 24 }}
             >
-              {task.assignee_first_name?.[0]}{task.assignee_last_name?.[0]}
+              {(task.assignee_first_name?.[0] || '') + (task.assignee_last_name?.[0] || '') || '?'}
             </Avatar>
           )}
         </Box>

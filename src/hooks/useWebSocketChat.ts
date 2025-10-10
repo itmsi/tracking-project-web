@@ -61,9 +61,9 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
     }
   }, [socket, taskId]);
 
-  // Send message
+  // Send message - Save ke database dulu, baru emit WebSocket
   const sendMessage = useCallback(async (message: string, attachments: any[] = [], replyTo?: string) => {
-    if (!socket || !taskId || !message.trim()) {
+    if (!taskId || !message.trim()) {
       return;
     }
 
@@ -71,43 +71,120 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
     setError(null);
 
     try {
-      socket.emit(WEBSOCKET_EVENTS.SEND_MESSAGE, {
-        taskId,
+      // 1. Save ke database via HTTP API (prioritas utama)
+      console.log('💾 Saving message to database...');
+      const response = await taskViewService.createChatMessage(taskId, {
         message: message.trim(),
-        attachments,
-        replyTo
+        attachments: attachments.map((a: any) => a.id || a).filter(Boolean)
       });
-    } catch (err) {
+      
+      console.log('✅ Message saved to database:', response.data);
+      
+      // 2. Tambahkan message ke local state (optimistic update)
+      setMessages(prev => [...prev, response.data]);
+      
+      // 3. Emit WebSocket event untuk real-time update ke user lain (optional)
+      // Backend akan handle broadcast setelah save
+      if (socket && socket.connected) {
+        console.log('📡 Emitting WebSocket event for real-time update...');
+        socket.emit(WEBSOCKET_EVENTS.SEND_MESSAGE, {
+          taskId,
+          message: message.trim(),
+          attachments,
+          replyTo,
+          messageId: response.data.id // Include message ID yang sudah tersimpan
+        });
+      } else {
+        console.warn('⚠️ WebSocket not connected, message saved to DB but no real-time update');
+      }
+      
+      // Notifikasi toast dihilangkan - tidak perlu notifikasi untuk setiap chat
+      // toast.success('Message sent successfully');
+    } catch (err: any) {
+      console.error('❌ Failed to send message:', err);
       setError('Failed to send message');
-      toast.error('Failed to send message');
+      toast.error(err.response?.data?.message || 'Failed to send message');
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, [socket, taskId]);
 
-  // Edit message
-  const editMessage = useCallback((messageId: string, newMessage: string) => {
-    if (!socket || !taskId || !messageId || !newMessage.trim()) {
+  // Edit message - Update database dulu, baru emit WebSocket
+  const editMessage = useCallback(async (messageId: string, newMessage: string) => {
+    if (!taskId || !messageId || !newMessage.trim()) {
       return;
     }
 
-    socket.emit(WEBSOCKET_EVENTS.EDIT_MESSAGE, {
-      taskId,
-      messageId,
-      newMessage: newMessage.trim()
-    });
+    try {
+      // 1. Update database via HTTP API
+      console.log('💾 Updating message in database...');
+      const response = await taskViewService.updateChatMessage(taskId, messageId, {
+        message: newMessage.trim()
+      });
+      
+      console.log('✅ Message updated in database:', response.data);
+      
+      // 2. Update local state
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId ? response.data : msg
+        )
+      );
+      
+      // 3. Emit WebSocket event untuk real-time update ke user lain (optional)
+      if (socket && socket.connected) {
+        console.log('📡 Emitting WebSocket event for real-time update...');
+        socket.emit(WEBSOCKET_EVENTS.EDIT_MESSAGE, {
+          taskId,
+          messageId,
+          newMessage: newMessage.trim()
+        });
+      }
+      
+      // Notifikasi toast dihilangkan - tidak perlu notifikasi untuk edit
+      // toast.success('Message updated successfully');
+    } catch (err: any) {
+      console.error('❌ Failed to update message:', err);
+      toast.error(err.response?.data?.message || 'Failed to update message');
+      throw err;
+    }
   }, [socket, taskId]);
 
-  // Delete message
-  const deleteMessage = useCallback((messageId: string) => {
-    if (!socket || !taskId || !messageId) {
+  // Delete message - Delete from database dulu, baru emit WebSocket
+  const deleteMessage = useCallback(async (messageId: string) => {
+    if (!taskId || !messageId) {
       return;
     }
 
-    socket.emit(WEBSOCKET_EVENTS.DELETE_MESSAGE, {
-      taskId,
-      messageId
-    });
+    try {
+      // 1. Delete from database via HTTP API
+      console.log('💾 Deleting message from database...');
+      await taskViewService.deleteChatMessage(taskId, messageId);
+      
+      console.log('✅ Message deleted from database');
+      
+      // 2. Remove from local state
+      setMessages(prev => 
+        prev.filter(msg => msg.id !== messageId)
+      );
+      
+      // 3. Emit WebSocket event untuk real-time update ke user lain (optional)
+      if (socket && socket.connected) {
+        console.log('📡 Emitting WebSocket event for real-time update...');
+        socket.emit(WEBSOCKET_EVENTS.DELETE_MESSAGE, {
+          taskId,
+          messageId
+        });
+      }
+      
+      // Notifikasi toast dihilangkan - tidak perlu notifikasi untuk delete
+      // toast.success('Message deleted successfully');
+    } catch (err: any) {
+      console.error('❌ Failed to delete message:', err);
+      toast.error(err.response?.data?.message || 'Failed to delete message');
+      throw err;
+    }
   }, [socket, taskId]);
 
   // Start typing
@@ -130,12 +207,24 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
   useEffect(() => {
     if (!socket) return;
 
-    // Message events
+    // Message events - Hanya untuk real-time update dari user lain
+    // Tidak perlu update local state karena sudah di-update saat send
     socket.on(WEBSOCKET_EVENTS.NEW_MESSAGE, (data: any) => {
-      setMessages(prev => [...prev, data.message]);
+      console.log('📨 Received new_message event:', data);
+      // Cek apakah message sudah ada di local state (dari own send)
+      setMessages(prev => {
+        const exists = prev.find(msg => msg.id === data.message?.id);
+        if (exists) {
+          console.log('⚠️ Message already exists in local state, skipping');
+          return prev;
+        }
+        console.log('✅ Adding new message from WebSocket');
+        return [...prev, data.message];
+      });
     });
 
     socket.on(WEBSOCKET_EVENTS.MESSAGE_EDITED, (data: any) => {
+      console.log('📝 Received message_edited event:', data);
       setMessages(prev => 
         prev.map(msg => 
           msg.id === data.message.id ? data.message : msg
@@ -144,6 +233,7 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
     });
 
     socket.on(WEBSOCKET_EVENTS.MESSAGE_DELETED, (data: any) => {
+      console.log('🗑️ Received message_deleted event:', data);
       setMessages(prev => 
         prev.filter(msg => msg.id !== data.messageId)
       );
@@ -151,15 +241,19 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
 
     // User events
     socket.on(WEBSOCKET_EVENTS.USER_JOINED, (data: any) => {
+      console.log('👤 User joined:', data.userName);
       setOnlineUsers(prev => [...prev, data]);
-      toast.success(`${data.userName} joined the chat`);
+      // Toast dihilangkan - terlalu mengganggu
+      // toast.success(`${data.userName} joined the chat`);
     });
 
     socket.on(WEBSOCKET_EVENTS.USER_LEFT, (data: any) => {
+      console.log('👤 User left:', data.userName);
       setOnlineUsers(prev => 
         prev.filter(user => user.userId !== data.userId)
       );
-      toast.info(`${data.userName} left the chat`);
+      // Toast dihilangkan - terlalu mengganggu
+      // toast.info(`${data.userName} left the chat`);
     });
 
     // Typing events
@@ -181,15 +275,21 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
 
     // Task events
     socket.on(WEBSOCKET_EVENTS.TASK_NOTIFICATION, (notification: any) => {
-      toast.info(notification.message);
+      console.log('📢 Task notification:', notification.message);
+      // Toast dihilangkan - gunakan notification bell di header
+      // toast.info(notification.message);
     });
 
     socket.on(WEBSOCKET_EVENTS.TASK_UPDATED, (update: any) => {
-      toast.info('Task has been updated');
+      console.log('📝 Task updated:', update);
+      // Toast dihilangkan - terlalu mengganggu
+      // toast.info('Task has been updated');
     });
 
     socket.on(WEBSOCKET_EVENTS.MEMBER_CHANGED, (change: any) => {
-      toast.info('Task members have changed');
+      console.log('👥 Task members changed:', change);
+      // Toast dihilangkan - terlalu mengganggu
+      // toast.info('Task members have changed');
     });
 
     // Error handling
@@ -213,16 +313,22 @@ export const useWebSocketChat = (taskId: string, initialMessages: any[] = []) =>
     };
   }, [socket]);
 
-  // Load chat history on mount (only if initialMessages is empty)
+  // Load chat history on mount - SELALU load dari database untuk memastikan riwayat lengkap
   useEffect(() => {
-    if (initialMessages.length === 0) {
-      console.log('📜 Loading chat history from API (no initial messages)');
+    if (taskId) {
+      console.log('📜 Loading chat history from database...');
       loadChatHistory();
-    } else {
-      console.log('✅ Using initial messages from TaskView, skipping API call');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId]);
+  
+  // Jika ada initialMessages, merge dengan messages dari database (untuk backward compatibility)
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0 && messages.length === 0) {
+      console.log('📦 Using initial messages as fallback');
+      setMessages(initialMessages);
+    }
+  }, [initialMessages, messages.length]);
 
   // Auto join/leave task
   useEffect(() => {

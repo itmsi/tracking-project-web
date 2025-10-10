@@ -101,11 +101,20 @@ export const useNotifications = (params: any = {}) => {
 
   // WebSocket listener untuk notifikasi real-time
   useEffect(() => {
+    console.log('🔔 useNotifications: WebSocket state check:', {
+      hasSocket: !!socket,
+      isConnected,
+      hasSetupWebSocket: hasSetupWebSocket.current,
+      willSetup: !!(socket && isConnected && !hasSetupWebSocket.current)
+    });
+
     if (!socket || !isConnected || hasSetupWebSocket.current) {
       return;
     }
 
-    console.log('🔔 Setting up WebSocket notification listener...');
+    console.log('🔔 useNotifications: Setting up WebSocket notification listener...');
+    console.log('🔔 useNotifications: Socket ID:', socket.id);
+    console.log('🔔 useNotifications: Existing listeners for "notification":', socket.listeners('notification').length);
     hasSetupWebSocket.current = true;
 
     // Function untuk play notification sound
@@ -147,22 +156,39 @@ export const useNotifications = (params: any = {}) => {
 
     // Listen untuk notifikasi baru
     const handleNotification = (notification: AppNotification) => {
-      console.log('🔔 New notification received via WebSocket:', notification);
+      console.log('🔔 useNotifications: New notification received via WebSocket!');
+      console.log('📦 useNotifications: Notification data:', notification);
+      console.log('📊 useNotifications: Notification type:', notification.type);
+      console.log('📋 useNotifications: Notification title:', notification.title);
+      console.log('💬 useNotifications: Notification message:', notification.message);
       
       // Tambahkan notifikasi baru ke list
-      setNotifications(prev => [notification, ...prev]);
+      setNotifications(prev => {
+        const newList = [notification, ...prev];
+        console.log('📝 useNotifications: Updated notification list. Total:', newList.length);
+        return newList;
+      });
       
       // Increment unread count
-      setUnreadCount(prev => prev + 1);
+      setUnreadCount(prev => {
+        const newCount = prev + 1;
+        console.log('📈 useNotifications: Unread count incremented:', prev, '→', newCount);
+        return newCount;
+      });
       
       // Play notification sound (optional)
       playNotificationSound();
       
       // Show browser notification jika diizinkan
       showBrowserNotification(notification);
+      
+      console.log('✅ useNotifications: Notification processing complete!');
     };
 
+    console.log('🎧 useNotifications: Attaching "notification" event listener...');
     socket.on('notification', handleNotification);
+    console.log('✅ useNotifications: Event listener attached successfully!');
+    console.log('📊 useNotifications: Total listeners for "notification":', socket.listeners('notification').length);
 
     return () => {
       if (socket) {

@@ -6,3 +6,4 @@ export { useProjects, useProject } from './useProjects';
 export { useTasks, useTask } from './useTasks';
 export { useTeams, useTeam } from './useTeams';
 export { useNotifications } from './useNotifications';
+export { useProfile } from './useProfile';

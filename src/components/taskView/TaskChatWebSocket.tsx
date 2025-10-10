@@ -47,31 +47,36 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
     e.preventDefault();
     
     if (newMessage.trim() && !isLoading) {
-      sendMessage(newMessage.trim());
-      setNewMessage('');
-      stopTyping();
+      try {
+        await sendMessage(newMessage.trim());
+        setNewMessage('');
+        stopTyping();
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        // Error sudah di-handle di hook, tidak perlu action tambahan
+      }
     }
   };
 
   const handleEditMessage = async (messageId: string) => {
-    if (!isConnected) return;
-
     try {
-      editMessage(messageId, editText.trim());
+      await editMessage(messageId, editText.trim());
       setEditingMessage(null);
       setEditText('');
     } catch (error) {
       console.error('Failed to edit message:', error);
+      // Error sudah di-handle di hook
     }
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!window.confirm('Are you sure you want to delete this message?') || !isConnected) return;
+    if (!window.confirm('Are you sure you want to delete this message?')) return;
 
     try {
-      deleteMessage(messageId);
+      await deleteMessage(messageId);
     } catch (error) {
       console.error('Failed to delete message:', error);
+      // Error sudah di-handle di hook
     }
   };
 
@@ -145,22 +150,37 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
       </div>
 
       <div className="chat-messages">
-        {messages.map((message: any) => (
-          <div key={message.id} className="chat-message">
-            <div className="message-avatar">
-              <img 
-                src={message.avatar_url || '/default-avatar.png'} 
-                alt={message.first_name}
-              />
-            </div>
-            
-            <div className="message-content">
+        {messages.map((message: any) => {
+          // Validasi dan format tanggal dengan aman
+          const formatMessageTime = (dateString: string) => {
+            if (!dateString) return '--:--';
+            try {
+              const date = new Date(dateString);
+              // Cek apakah date valid
+              if (isNaN(date.getTime())) return '--:--';
+              return format(date, 'HH:mm');
+            } catch (error) {
+              console.error('Error formatting date:', dateString, error);
+              return '--:--';
+            }
+          };
+
+          return (
+            <div key={message.id} className="chat-message">
+              <div className="message-avatar">
+                <img 
+                  src={message.avatar_url || '/default-avatar.png'} 
+                  alt={message.first_name}
+                />
+              </div>
+              
+              <div className="message-content">
               <div className="message-header">
                 <span className="message-author">
-                  {message.first_name} {message.last_name}
+                  {[message.first_name, message.last_name].filter(Boolean).join(' ') || 'Unknown User'}
                 </span>
                 <span className="message-time">
-                  {format(new Date(message.created_at), 'HH:mm')}
+                  {formatMessageTime(message.created_at)}
                 </span>
                 {message.is_edited && (
                   <span className="message-edited">(edited)</span>
@@ -226,7 +246,8 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
               )}
             </div>
           </div>
-        ))}
+          );
+        })}
         
         <div ref={messagesEndRef} />
       </div>

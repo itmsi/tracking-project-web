@@ -155,10 +155,10 @@ const TaskListItem: React.FC<TaskListItemProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Person sx={{ fontSize: 16, color: 'text.secondary' }} />
                   <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                    {task.assignee_first_name?.[0] || 'U'}
+                    {(task.assignee_first_name?.[0] || '') + (task.assignee_last_name?.[0] || '') || 'U'}
                   </Avatar>
                   <Typography variant="body2" color="text.secondary">
-                    {task.assignee_first_name} {task.assignee_last_name}
+                    {[task.assignee_first_name, task.assignee_last_name].filter(Boolean).join(' ') || 'Unassigned'}
                   </Typography>
                 </Box>
               )}

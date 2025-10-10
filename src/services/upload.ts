@@ -62,36 +62,77 @@ export const uploadService = {
     file: File, 
     options: UploadOptions
   ): Promise<UploadResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', options.type);
-    
-    if (options.related_id) {
-      formData.append('related_id', options.related_id);
-    }
-    
-    if (options.related_type) {
-      formData.append('related_type', options.related_type);
-    }
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', options.type);
+      
+      // Add description for avatar
+      if (options.type === 'avatar') {
+        formData.append('description', 'Foto profil user');
+      }
+      
+      if (options.related_id) {
+        formData.append('related_id', options.related_id);
+      }
+      
+      if (options.related_type) {
+        formData.append('related_type', options.related_type);
+      }
 
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-      onUploadProgress: (progressEvent: any) => {
-        if (options.onProgress) {
-          const progress: UploadProgress = {
-            loaded: progressEvent.loaded,
-            total: progressEvent.total,
-            percentage: Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          };
-          options.onProgress(progress);
+      console.log('📤 Uploading file:', {
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadType: options.type
+      });
+
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        onUploadProgress: (progressEvent: any) => {
+          if (options.onProgress) {
+            const progress: UploadProgress = {
+              loaded: progressEvent.loaded,
+              total: progressEvent.total,
+              percentage: Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            };
+            options.onProgress(progress);
+          }
+        },
+      };
+
+      const response = await api.post('/api/upload', formData, config);
+      console.log('✅ Upload successful:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Upload error:', error);
+      
+      // More detailed error message
+      if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        throw new Error('Tidak dapat terhubung ke server. Pastikan backend running di port 9553 dan endpoint /api/upload tersedia.');
+      }
+      
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.response.data?.error || 'Upload gagal';
+        
+        if (status === 400) {
+          throw new Error(`Bad Request: ${message}. Periksa format file dan data yang dikirim.`);
+        } else if (status === 401) {
+          throw new Error('Unauthorized: Token expired atau tidak valid. Silakan login kembali.');
+        } else if (status === 413) {
+          throw new Error('File terlalu besar. Ukuran maksimal 10MB.');
+        } else if (status === 415) {
+          throw new Error('Format file tidak didukung. Gunakan JPG, PNG, GIF, atau WEBP.');
+        } else {
+          throw new Error(`Server Error: ${message}`);
         }
-      },
-    };
-
-    const response = await api.post('/api/upload', formData, config);
-    return response.data;
+      }
+      
+      throw error;
+    }
   },
 
   // Upload Multiple Files
@@ -207,13 +248,13 @@ export const uploadService = {
 
   // Delete File
   deleteFile: async (fileId: string): Promise<{ success: boolean; message: string }> => {
-    const response = await api.delete(`/upload/${fileId}`);
+    const response = await api.delete(`/api/upload/${fileId}`);
     return response.data;
   },
 
   // Get File Info
   getFileInfo: async (fileId: string): Promise<{ success: boolean; data: UploadedFile }> => {
-    const response = await api.get(`/upload/${fileId}`);
+    const response = await api.get(`/api/upload/${fileId}`);
     return response.data;
   },
 
@@ -241,7 +282,7 @@ export const uploadService = {
 
   // Update File Metadata
   updateFileMetadata: async (fileId: string, metadata: any): Promise<{ success: boolean; data: UploadedFile }> => {
-    const response = await api.patch(`/upload/${fileId}`, { metadata });
+    const response = await api.patch(`/api/upload/${fileId}`, { metadata });
     return response.data;
   },
 

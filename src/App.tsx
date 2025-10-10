@@ -18,11 +18,14 @@ import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Teams from './pages/Teams';
 import TaskViewPage from './components/taskView/TaskViewPage';
+import ProfilePage from './components/profile/ProfilePage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 // Import testing utilities di development mode
 if (process.env.NODE_ENV === 'development') {
   import('./utils/testAutoLogout');
+  import('./utils/testNotification');
+  import('./utils/debugChat');
 }
 
 function App() {
@@ -61,7 +64,7 @@ function App() {
                 <Route path="calendar" element={<div>Calendar Page - Coming Soon</div>} />
                 <Route path="notifications" element={<div>Notifications Page - Coming Soon</div>} />
                 <Route path="settings" element={<div>Settings Page - Coming Soon</div>} />
-                <Route path="profile" element={<div>Profile Page - Coming Soon</div>} />
+                <Route path="profile" element={<ProfilePage />} />
               </Route>
 
               {/* Catch all route */}

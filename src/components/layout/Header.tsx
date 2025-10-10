@@ -43,7 +43,7 @@ import { logout } from '../../store/authSlice';
 import { notificationsService, AppNotification } from '../../services/notifications';
 import { useFocusManagement } from '../../hooks/useFocusManagement';
 import { useAriaHiddenFix } from '../../hooks/useAriaHiddenFix';
-import { useWebSocket } from '../../contexts/WebSocketContext';
+import { useNotificationContext } from '../../contexts/NotificationContext';
 
 const Header: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -51,14 +51,20 @@ const Header: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const { socket, isConnected } = useWebSocket();
-  const hasSetupWebSocket = React.useRef(false);
+  
+  // Gunakan NotificationContext untuk mendapatkan data notifikasi
+  const { 
+    notifications, 
+    unreadCount, 
+    loading, 
+    error, 
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    refetch
+  } = useNotificationContext();
 
   // Focus management untuk notification menu
   const notificationFocusManagement = useFocusManagement(Boolean(notificationAnchorEl));
@@ -66,55 +72,6 @@ const Header: React.FC = () => {
 
   // Fix aria-hidden issues
   useAriaHiddenFix(Boolean(notificationAnchorEl) || Boolean(anchorEl));
-
-  // Load notifications
-  const loadNotifications = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await notificationsService.getNotifications({ limit: 10 });
-      console.log('📋 Notifications loaded:', response.data.notifications.length);
-      setNotifications(response.data.notifications);
-      
-      const unreadResponse = await notificationsService.getUnreadCount();
-      const count = unreadResponse.data.count ?? unreadResponse.data.unread_count ?? 0;
-      console.log('🔔 Initial unread count:', count);
-      setUnreadCount(count);
-    } catch (err: any) {
-      console.error('Error loading notifications:', err);
-      // Jika error 404, tidak perlu set error karena sudah dihandle di service
-      if (err.response?.status !== 404) {
-        setError('Gagal memuat notifikasi');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Load unread count
-  const loadUnreadCount = async () => {
-    try {
-      const response = await notificationsService.getUnreadCount();
-      const count = response.data.count ?? response.data.unread_count ?? 0;
-      console.log('🔔 Unread count loaded:', count);
-      setUnreadCount(count);
-    } catch (err: any) {
-      console.error('Error loading unread count:', err);
-      // Jika error 404, set count ke 0 (sudah dihandle di service)
-      if (err.response?.status === 404) {
-        setUnreadCount(0);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      loadNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(loadUnreadCount, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
 
   // Update browser tab title saat ada notifikasi baru
   useEffect(() => {
@@ -148,41 +105,6 @@ const Header: React.FC = () => {
     prevUnreadCount.current = unreadCount;
   }, [unreadCount]);
 
-  // WebSocket listener untuk notifikasi real-time
-  useEffect(() => {
-    if (!socket || !isConnected || hasSetupWebSocket.current) {
-      return;
-    }
-
-    console.log('🔔 Header: Setting up WebSocket notification listener...');
-    hasSetupWebSocket.current = true;
-
-    // Listen untuk notifikasi baru
-    const handleNotification = (notification: AppNotification) => {
-      console.log('🔔 Header: New notification received via WebSocket:', notification);
-      
-      // Tambahkan notifikasi baru ke list
-      setNotifications(prev => [notification, ...prev]);
-      
-      // Increment unread count
-      setUnreadCount(prev => {
-        const newCount = prev + 1;
-        console.log('📈 Header: Unread count incremented:', prev, '→', newCount);
-        return newCount;
-      });
-    };
-
-    socket.on('notification', handleNotification);
-
-    return () => {
-      if (socket) {
-        console.log('🧹 Header: Cleaning up WebSocket notification listener');
-        socket.off('notification', handleNotification);
-        hasSetupWebSocket.current = false;
-      }
-    };
-  }, [socket, isConnected]);
-
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -193,7 +115,8 @@ const Header: React.FC = () => {
 
   const handleNotificationMenu = (event: React.MouseEvent<HTMLElement>) => {
     setNotificationAnchorEl(event.currentTarget);
-    loadNotifications();
+    // Refetch untuk memastikan data terbaru
+    refetch();
   };
 
   const handleNotificationClose = () => {
@@ -202,8 +125,7 @@ const Header: React.FC = () => {
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      await notificationsService.markAsRead(notificationId);
-      loadNotifications();
+      await markAsRead(notificationId);
     } catch (err) {
       console.error('Error marking notification as read:', err);
     }
@@ -211,8 +133,7 @@ const Header: React.FC = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationsService.markAllAsRead();
-      loadNotifications();
+      await markAllAsRead();
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
     }
@@ -220,8 +141,7 @@ const Header: React.FC = () => {
 
   const handleDeleteNotification = async (notificationId: string) => {
     try {
-      await notificationsService.deleteNotification(notificationId);
-      loadNotifications();
+      await deleteNotification(notificationId);
     } catch (err) {
       console.error('Error deleting notification:', err);
     }
@@ -408,7 +328,7 @@ const Header: React.FC = () => {
               src={user?.avatar_url}
               sx={{ width: 32, height: 32 }}
             >
-              {user?.first_name?.[0]}{user?.last_name?.[0]}
+              {(user?.first_name?.[0] || '') + (user?.last_name?.[0] || '') || '?'}
             </Avatar>
           </IconButton>
 
@@ -446,10 +366,10 @@ const Header: React.FC = () => {
           >
             <Box sx={{ px: 2, py: 1 }}>
               <Typography variant="subtitle2" fontWeight="bold">
-                {user?.first_name} {user?.last_name}
+                {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {user?.email}
+                {user?.email || '-'}
               </Typography>
             </Box>
             <Divider />

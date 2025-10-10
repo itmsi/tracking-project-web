@@ -241,7 +241,10 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
           <Box component="form" onSubmit={handleAddMember} display="flex" flexDirection="column" gap={2}>
             <Autocomplete
               options={Array.isArray(searchResults) ? searchResults : []}
-              getOptionLabel={(option) => `${option.first_name} ${option.last_name} (${option.email})`}
+              getOptionLabel={(option) => {
+                const name = [option.first_name, option.last_name].filter(Boolean).join(' ') || 'Unknown';
+                return `${name} (${option.email || '-'})`;
+              }}
               value={selectedUser}
               onChange={(_, newValue) => setSelectedUser(newValue)}
               inputValue={searchQuery}
@@ -265,14 +268,14 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                   <Box component="li" key={key} {...otherProps}>
                     <Box display="flex" alignItems="center" gap={1}>
                       <Avatar src={option.avatar_url} sx={{ width: 24, height: 24 }}>
-                        {option.first_name?.[0] || '?'}
+                        {(option.first_name?.[0] || '') + (option.last_name?.[0] || '') || '?'}
                       </Avatar>
                       <Box>
                         <Typography variant="body2">
-                          {option.first_name} {option.last_name}
+                          {[option.first_name, option.last_name].filter(Boolean).join(' ') || 'Unknown'}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
-                          {option.email}
+                          {option.email || '-'}
                         </Typography>
                       </Box>
                     </Box>
@@ -379,17 +382,17 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
             <ListItem key={member.id} divider>
               <ListItemAvatar>
                 <Avatar src={member.avatar_url || '/default-avatar.png'}>
-                  {member.first_name[0]}
+                  {(member.first_name?.[0] || '') + (member.last_name?.[0] || '') || '?'}
                 </Avatar>
               </ListItemAvatar>
               <ListItemText
                 primary={
                   <Box display="flex" alignItems="center" gap={1}>
                     <Typography variant="subtitle2" component="span">
-                      {member.first_name} {member.last_name}
+                      {[member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown'}
                     </Typography>
                     <Chip 
-                      label={member.role} 
+                      label={member.role || 'Member'} 
                       color={getRoleBadgeColor(member.role) as any}
                       size="small"
                       icon={getRoleIcon(member.role)}
@@ -399,10 +402,10 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
                 secondary={
                   <Box component="span" display="block">
                     <Typography variant="body2" color="textSecondary" component="span" display="block">
-                      {member.email}
+                      {member.email || '-'}
                     </Typography>
                     <Typography variant="caption" color="textSecondary" component="span" display="block">
-                      Joined {new Date(member.joined_at).toLocaleDateString()}
+                      Joined {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '-'}
                     </Typography>
                   </Box>
                 }
@@ -445,7 +448,8 @@ const TaskMembers: React.FC<TaskMembersProps> = ({ taskId, members: initialMembe
           if (selectedMemberId) {
             const member = (members || []).find(m => m.id === selectedMemberId);
             if (member) {
-              handleRemoveMember(selectedMemberId, `${member.first_name} ${member.last_name}`);
+              const memberName = [member.first_name, member.last_name].filter(Boolean).join(' ') || 'this member';
+              handleRemoveMember(selectedMemberId, memberName);
             }
           }
           handleMenuClose();

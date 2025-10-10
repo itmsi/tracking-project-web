@@ -287,7 +287,7 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
                 secondary={
                   <Box>
                     <Typography variant="caption" color="textSecondary">
-                      {formatFileSize(attachment.file_size)} • {new Date(attachment.created_at).toLocaleDateString()} • by {attachment.uploader_first_name} {attachment.uploader_last_name}
+                      {formatFileSize(attachment.file_size)} • {new Date(attachment.created_at).toLocaleDateString()} • by {[attachment.uploader_first_name, attachment.uploader_last_name].filter(Boolean).join(' ') || 'Unknown'}
                     </Typography>
                     {attachment.description && (
                       <Typography variant="body2" sx={{ mt: 0.5 }}>

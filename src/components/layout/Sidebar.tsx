@@ -248,14 +248,14 @@ const Sidebar: React.FC = () => {
               fontWeight: 'bold',
             }}
           >
-            {user?.first_name?.[0]}{user?.last_name?.[0]}
+            {(user?.first_name?.[0] || '') + (user?.last_name?.[0] || '') || '?'}
           </Box>
           <Box>
             <Typography variant="subtitle2" fontWeight="bold">
-              {user?.first_name} {user?.last_name}
+              {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'User'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {user?.role}
+              {user?.role || 'User'}
             </Typography>
           </Box>
         </Box>

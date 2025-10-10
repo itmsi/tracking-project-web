@@ -38,6 +38,13 @@ class WebSocketService {
       rememberUpgrade: false // Don't remember upgrade preference
     });
 
+    // Expose WebSocket instance untuk debugging (HANYA di development)
+    if (process.env.NODE_ENV === 'development') {
+      window.__WEBSOCKET_INSTANCE__ = this.socket;
+      console.log('🔧 WebSocket instance exposed to window.__WEBSOCKET_INSTANCE__');
+      console.log('💡 Untuk debug, gunakan: window.__WEBSOCKET_INSTANCE__.onAny((event, ...args) => console.log("📡", event, args))');
+    }
+
     this.setupEventHandlers();
     return this.socket;
   }

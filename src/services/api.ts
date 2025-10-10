@@ -2,7 +2,8 @@ import axios from 'axios';
 import { addCacheBustingToConfig } from '../utils/cacheBusting';
 import { performLogout } from '../utils/authUtils';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:9553/api';
+// Base URL tanpa /api suffix, karena semua endpoint sudah include /api
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:9553';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -65,10 +66,10 @@ api.interceptors.response.use(
         }
 
         console.log('🔄 Refreshing access token...');
-        console.log('📍 Refresh URL:', `${API_BASE_URL.replace('/api', '')}/api/auth/refresh-token`);
+        console.log('📍 Refresh URL:', `${API_BASE_URL}/api/auth/refresh-token`);
         
         const response = await axios.post(
-          `${API_BASE_URL.replace('/api', '')}/api/auth/refresh-token`,
+          `${API_BASE_URL}/api/auth/refresh-token`,
           { refresh_token: refreshToken }
         );
 
@@ -117,7 +118,7 @@ api.interceptors.response.use(
 
 // Method khusus untuk force refresh tanpa cache busting parameter
 export const forceRefreshApi = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_BASE_URL, // Same as main api (without /api suffix)
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -159,7 +160,7 @@ forceRefreshApi.interceptors.response.use(
         }
 
         const response = await axios.post(
-          `${API_BASE_URL.replace('/api', '')}/api/auth/refresh-token`,
+          `${API_BASE_URL}/api/auth/refresh-token`,
           { refresh_token: refreshToken }
         );
 
