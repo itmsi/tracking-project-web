@@ -171,6 +171,22 @@ export const taskViewService = {
   deleteAttachment: (taskId: string, attachmentId: string): Promise<void> =>
     api.delete(`/api/tasks/${taskId}/attachments/${attachmentId}`),
 
+  // Download Attachment - Get download URL or trigger download
+  downloadAttachment: (taskId: string, attachmentId: string): Promise<void> => {
+    // Buat URL download dan trigger download
+    const downloadUrl = `/api/tasks/${taskId}/attachments/${attachmentId}/download`;
+    
+    // Buat hidden link untuk download
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    return Promise.resolve();
+  },
+
   // Member Management - Add/remove members dengan role-based permissions
   getTaskMembers: (taskId: string, params: { role?: string } = {}): Promise<{ data: any }> =>
     api.get(`/api/tasks/${taskId}/members`, { params }),

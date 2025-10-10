@@ -176,6 +176,65 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
     }
   };
 
+  const handleDownload = async (attachment: any) => {
+    try {
+      console.log('📥 Downloading file:', attachment.original_name);
+      
+      // Method 1: Coba download melalui API endpoint
+      try {
+        const downloadUrl = `/api/tasks/${taskId}/attachments/${attachment.id}/download`;
+        
+        // Buat link untuk download dengan proper attributes
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = attachment.original_name;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.style.display = 'none';
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showNotification(`Downloading ${attachment.original_name}...`, 'info');
+        return;
+      } catch (apiError) {
+        console.log('⚠️ API download failed, trying fallback...', apiError);
+      }
+      
+      // Method 2: Fallback - coba direct file path
+      if (attachment.file_path) {
+        try {
+          const link = document.createElement('a');
+          link.href = attachment.file_path;
+          link.download = attachment.original_name;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.style.display = 'none';
+          
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          showNotification(`Downloading ${attachment.original_name}...`, 'info');
+          return;
+        } catch (pathError) {
+          console.log('⚠️ Direct path download failed:', pathError);
+        }
+      }
+      
+      // Method 3: Final fallback - open in new tab
+      const fallbackUrl = attachment.file_path || `/api/tasks/${taskId}/attachments/${attachment.id}/download`;
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+      showNotification(`Opening ${attachment.original_name} in new tab...`, 'info');
+      
+    } catch (error: any) {
+      console.error('❌ All download methods failed:', error);
+      showNotification('Failed to download file. Please contact support.', 'error');
+    }
+  };
+
   const getFileIcon = (fileType: string) => {
     switch (fileType) {
       case 'image': return <ImageIcon />;
@@ -301,10 +360,14 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
                   <Box display="flex" alignItems="center" gap={1}>
                     <Button 
                       variant="text" 
-                      href={attachment.file_path} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
+                      onClick={() => handleDownload(attachment)}
+                      sx={{ 
+                        textTransform: 'none', 
+                        p: 0, 
+                        minWidth: 'auto',
+                        textAlign: 'left',
+                        justifyContent: 'flex-start'
+                      }}
                     >
                       {attachment.original_name}
                     </Button>
@@ -330,10 +393,9 @@ const TaskAttachments: React.FC<TaskAttachmentsProps> = ({ taskId, attachments: 
                 <Box display="flex" gap={1}>
                   <IconButton 
                     edge="end" 
-                    href={attachment.file_path} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                    onClick={() => handleDownload(attachment)}
                     size="small"
+                    title={`Download ${attachment.original_name}`}
                   >
                     <DownloadIcon />
                   </IconButton>
