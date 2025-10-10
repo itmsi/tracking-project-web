@@ -27,6 +27,7 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
   const [newMessage, setNewMessage] = useState('');
   const [editingMessage, setEditingMessage] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -165,13 +166,28 @@ const TaskChatWebSocket: React.FC<TaskChatWebSocketProps> = ({ taskId, permissio
             }
           };
 
+          // Tentukan apakah akan pakai foto atau initial
+          const userInitial = (message.first_name?.[0] || '') + (message.last_name?.[0] || '') || '?';
+          const hasImageError = imageErrors.has(message.id);
+          const showImage = message.avatar_url && !hasImageError;
+
           return (
             <div key={message.id} className="chat-message">
               <div className="message-avatar">
-                <img 
-                  src={message.avatar_url || '/default-avatar.png'} 
-                  alt={message.first_name}
-                />
+                {showImage ? (
+                  <img 
+                    src={message.avatar_url} 
+                    alt={[message.first_name, message.last_name].filter(Boolean).join(' ') || 'User'}
+                    onError={() => {
+                      // Jika gambar gagal load, set error state
+                      setImageErrors(prev => new Set(prev).add(message.id));
+                    }}
+                  />
+                ) : (
+                  <div className="avatar-initial">
+                    {userInitial}
+                  </div>
+                )}
               </div>
               
               <div className="message-content">

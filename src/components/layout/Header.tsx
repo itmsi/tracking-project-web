@@ -491,8 +491,14 @@ const Header: React.FC = () => {
                       onClick={() => handleNotificationClick(notification)}
                       sx={{
                         bgcolor: notification.is_read ? 'transparent' : 'action.hover',
+                        py: 1.5,
+                        px: 2,
+                        borderRadius: 1,
+                        mb: 0.5,
                         '&:hover': {
                           bgcolor: 'action.selected',
+                          transform: 'translateX(2px)',
+                          transition: 'all 0.2s ease-in-out'
                         },
                       }}
                     >
@@ -500,8 +506,10 @@ const Header: React.FC = () => {
                       <Avatar
                         sx={{
                           bgcolor: `${getNotificationColor(notification.type)}.main`,
-                          width: 32,
-                          height: 32,
+                          width: 36,
+                          height: 36,
+                          fontSize: '1rem',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}
                       >
                         {getNotificationIcon(notification.type)}
@@ -511,24 +519,59 @@ const Header: React.FC = () => {
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="subtitle2" fontWeight={notification.is_read ? 'normal' : 'bold'}>
-                            {notification.title}
+                            {notification.title && !notification.title.includes('undefined') 
+                              ? notification.title 
+                              : notification.type === 'chat_message' 
+                                ? 'Pesan baru dari pengguna'
+                                : 'Notifikasi baru'
+                            }
                           </Typography>
                           <Chip
                             label={notification.type.replace('_', ' ')}
                             size="small"
                             color={getNotificationColor(notification.type) as any}
                             variant="outlined"
+                            sx={{ 
+                              textTransform: 'capitalize',
+                              fontSize: '0.7rem',
+                              height: '20px'
+                            }}
                           />
                         </Box>
                       }
                       secondaryTypographyProps={{ component: 'div' }}
                       secondary={
                         <>
-                          <Typography variant="body2" color="text.secondary">
-                            {notification.message}
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary"
+                            sx={{ 
+                              mb: 0.5,
+                              lineHeight: 1.3,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: 'vertical'
+                            }}
+                          >
+                            {notification.message || 'Tidak ada pesan'}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(notification.created_at).toLocaleString()}
+                          <Typography 
+                            variant="caption" 
+                            color="text.secondary"
+                            sx={{ 
+                              fontSize: '0.7rem',
+                              opacity: 0.8
+                            }}
+                          >
+                            {new Date(notification.created_at).toLocaleString('id-ID', {
+                              day: '2-digit',
+                              month: '2-digit', 
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </Typography>
                         </>
                       }
@@ -539,10 +582,17 @@ const Header: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => handleMarkAsRead(notification.id)}
-                            title="Mark as read"
+                            title="Tandai sudah dibaca"
                             aria-label={`Mark notification "${notification.title}" as read`}
                             role="menuitem"
                             tabIndex={0}
+                            sx={{
+                              bgcolor: 'primary.main',
+                              color: 'white',
+                              '&:hover': {
+                                bgcolor: 'primary.dark',
+                              }
+                            }}
                           >
                             <MarkEmailRead fontSize="small" />
                           </IconButton>
@@ -550,11 +600,18 @@ const Header: React.FC = () => {
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteNotification(notification.id)}
-                          title="Delete"
+                          title="Hapus notifikasi"
                           color="error"
                           aria-label={`Delete notification "${notification.title}"`}
                           role="menuitem"
                           tabIndex={0}
+                          sx={{
+                            bgcolor: 'error.light',
+                            color: 'white',
+                            '&:hover': {
+                              bgcolor: 'error.main',
+                            }
+                          }}
                         >
                           <Close fontSize="small" />
                         </IconButton>

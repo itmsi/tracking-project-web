@@ -241,18 +241,25 @@ const TaskChat: React.FC<TaskChatProps> = ({ taskId, initialMessages, permission
         {(messages || []).map((message) => (
           <ChatMessage key={message.id}>
             <Avatar 
-              src={message.avatar_url || '/default-avatar.png'} 
-              alt={message.first_name}
-              sx={{ width: 40, height: 40 }}
-            />
+              src={message.avatar_url} 
+              alt={[message.first_name, message.last_name].filter(Boolean).join(' ') || 'User'}
+              sx={{ 
+                width: 40, 
+                height: 40,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                fontWeight: 'bold'
+              }}
+            >
+              {(message.first_name?.[0] || '') + (message.last_name?.[0] || '') || '?'}
+            </Avatar>
             
             <MessageContent>
               <MessageHeader>
                 <Typography variant="subtitle2" fontWeight={600}>
-                  {message.first_name} {message.last_name}
+                  {[message.first_name, message.last_name].filter(Boolean).join(' ') || 'Unknown User'}
                 </Typography>
                 <Typography variant="caption" color="textSecondary">
-                  {new Date(message.created_at).toLocaleString()}
+                  {message.created_at ? new Date(message.created_at).toLocaleString() : '-'}
                 </Typography>
                 {message.is_edited && (
                   <Typography variant="caption" color="textSecondary" fontStyle="italic">
